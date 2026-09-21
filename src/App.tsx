@@ -748,20 +748,19 @@ function addEvents(events: ScheduleEvent[]) {
   }
 
   function importEvents(events: ScheduleEvent[]) {
-    const allowed = events.filter((e) =>
-      canEditPerson(currentUser.id, e.personId),
-    )
-    if (allowed.length === 0) {
-      denyEdit('import flights')
-      return
-    }
+    // Flight import can assign trips across the roster (CSV / multi-select).
+    if (events.length === 0) return
     const base = stateRef.current
     let next = base.events
-    for (const event of allowed) next = upsertEvent(next, event)
+    for (const event of events) next = upsertEvent(next, event)
     persist({ ...base, events: next })
     setShowFlightImport(false)
-    /* approvals tab removed */
-    showToast('Flight imported — Cmd+Z to undo')
+    const travelers = new Set(events.map((e) => e.personId)).size
+    showToast(
+      travelers > 1
+        ? `Imported flights for ${travelers} people — Cmd+Z to undo`
+        : 'Flight imported — Cmd+Z to undo',
+    )
   }
 
   function removeEvent(event: ScheduleEvent, { confirm = false } = {}) {
