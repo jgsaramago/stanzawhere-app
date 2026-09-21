@@ -1169,7 +1169,9 @@ function addEvents(events: ScheduleEvent[]) {
                                 </div>
                               )}
                               <div className="event-stack">
-                                {dayEvents.map((event) => {
+                                {dayEvents
+                                  .filter((event) => !(isWeekend(day) && event.type === 'pto'))
+                                  .map((event) => {
                                   const meta = EVENT_META[event.type]
                                   const Icon = meta.icon
                                   const dayKey = toDateKey(day)
@@ -1207,15 +1209,17 @@ function addEvents(events: ScheduleEvent[]) {
                                       >
                                         <Icon size={12} />
                                         <span>
-                                          {event.type === 'location'
-                                            ? event.hotel
-                                              ? `Hotel: ${event.hotel}`
-                                              : event.title.startsWith('Hotel')
+                                          {event.type === 'pto'
+                                            ? event.title
+                                            : event.type === 'location'
+                                              ? event.hotel
+                                                ? `Hotel: ${event.hotel}`
+                                                : event.title.startsWith('Hotel')
+                                                  ? event.title
+                                                  : 'Hotel: TBD'
+                                              : isStart
                                                 ? event.title
-                                                : 'Hotel: TBD'
-                                            : isStart
-                                              ? event.title
-                                              : event.location || meta.label}
+                                                : event.location || meta.label}
                                         </span>
                                       </button>
                                       {dayFlights.map((f) => (

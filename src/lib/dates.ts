@@ -1,4 +1,5 @@
 import {
+  isWeekend,
   addDays,
   addMonths,
   eachDayOfInterval,
@@ -136,9 +137,9 @@ export function placeForPersonDay(
     'pending',
   ])
   const pto = dayEvents.find((e) => e.type === 'pto')
-  if (pto) {
+  if (pto && !isWeekend(day)) {
     return {
-      place: 'PTO',
+      place: pto.title?.trim() || 'PTO',
       kind: 'pto',
       pending: pto.status === 'pending',
     }
