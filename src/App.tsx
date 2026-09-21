@@ -312,6 +312,17 @@ function EventForm({
 }
 
 
+
+function teamEventPlaceLabel(event: TeamEvent): string | undefined {
+  const city = event.city?.trim()
+  const country =
+    event.countryCode && (COUNTRY_NAMES[event.countryCode] ?? event.countryCode)
+  if (city && country) return `${city}, ${country}`
+  if (city) return city
+  if (country) return country
+  return event.location?.trim() || undefined
+}
+
 function TeamEventForm({
   initial,
   currentUserId,
@@ -329,19 +340,29 @@ function TeamEventForm({
   const [description, setDescription] = useState(initial?.description ?? '')
   const [startDate, setStartDate] = useState(initial?.startDate ?? toDateKey(new Date()))
   const [endDate, setEndDate] = useState(initial?.endDate ?? toDateKey(new Date()))
-  const [location, setLocation] = useState(initial?.location ?? '')
+  const [city, setCity] = useState(initial?.city ?? '')
+  const [countryCode, setCountryCode] = useState(initial?.countryCode ?? '')
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) return
     const now = new Date().toISOString()
+    const cityTrim = city.trim()
+    const codeTrim = countryCode.trim()
+    const countryName = codeTrim ? COUNTRY_NAMES[codeTrim] ?? codeTrim : undefined
+    const location =
+      cityTrim && countryName
+        ? `${cityTrim}, ${countryName}`
+        : cityTrim || countryName || undefined
     onSubmit({
       id: initial?.id ?? uid('team'),
       title: title.trim(),
       description: description.trim() || undefined,
       startDate,
       endDate: endDate < startDate ? startDate : endDate,
-      location: location.trim() || undefined,
+      city: cityTrim || undefined,
+      countryCode: codeTrim || undefined,
+      location,
       createdBy: initial?.createdBy ?? currentUserId,
       createdAt: initial?.createdAt ?? now,
       updatedAt: now,
@@ -406,13 +427,28 @@ function TeamEventForm({
             />
           </label>
 
-          <label className="span-2">
-            Location
+          <label>
+            City
             <input
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="City, venue, or Remote"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="Heidelberg, Lisbon…"
             />
+          </label>
+
+          <label>
+            Country
+            <select
+              value={countryCode}
+              onChange={(e) => setCountryCode(e.target.value)}
+            >
+              <option value="">Select country</option>
+              {COUNTRY_OPTIONS.map(([code, name]) => (
+                <option key={code} value={code}>
+                  {name}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
 
@@ -1023,34 +1059,37 @@ function addEvents(events: ScheduleEvent[]) {
                         } ${isWeekend(day) ? 'is-weekend' : ''}`}
                       >
                         <div className="event-stack">
-                          {dayTeamEvents.map((event) => (
-                            <button
-                              key={event.id}
-                              type="button"
-                              className="event-chip chip-team-event"
-                              title={[
-                                event.title,
-                                event.location,
-                                event.description,
-                              ]
-                                .filter(Boolean)
-                                .join(' · ')}
-                              onClick={() => {
-                                setEditingTeamEvent(event)
-                                setShowTeamEventForm(true)
-                              }}
-                            >
-                              <Calendar size={12} />
-                              <span>
-                                {isSameDay(
-                                  day,
-                                  new Date(`${event.startDate}T12:00:00`),
-                                )
-                                  ? event.title
-                                  : event.location || event.title}
-                              </span>
-                            </button>
-                          ))}
+                          {dayTeamEvents.map((event) => {
+                            const place = teamEventPlaceLabel(event)
+                            return (
+                              <button
+                                key={event.id}
+                                type="button"
+                                className="event-chip chip-team-event"
+                                title={[
+                                  event.title,
+                                  place,
+                                  event.description,
+                                ]
+                                  .filter(Boolean)
+                                  .join(' · ')}
+                                onClick={() => {
+                                  setEditingTeamEvent(event)
+                                  setShowTeamEventForm(true)
+                                }}
+                              >
+                                <Calendar size={12} className="team-event-icon" />
+                                <span className="team-event-text">
+                                  <strong className="team-event-title">
+                                    {event.title}
+                                  </strong>
+                                  {place && (
+                                    <span className="team-event-place">{place}</span>
+                                  )}
+                                </span>
+                              </button>
+                            )
+                          })}
                           {dayTeamEvents.length === 0 && !isWeekend(day) && (
                             <button
                               type="button"

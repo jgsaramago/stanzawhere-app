@@ -130,6 +130,11 @@ export interface TeamEvent {
   description?: string
   startDate: string
   endDate: string
+  /** City shown under the title on the Event row */
+  city?: string
+  /** ISO country code shown under the title with the city */
+  countryCode?: string
+  /** @deprecated prefer city + countryCode */
   location?: string
   createdBy: string
   createdAt: string

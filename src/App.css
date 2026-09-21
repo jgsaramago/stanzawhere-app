@@ -1790,3 +1790,38 @@ h4 {
   font-size: 0.75rem;
   gap: 4px;
 }
+
+
+.chip-team-event {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  text-align: left;
+  line-height: 1.2;
+  padding: 6px 8px;
+  min-height: 44px;
+}
+
+.chip-team-event .team-event-icon {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.team-event-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.team-event-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: inherit;
+}
+
+.team-event-place {
+  font-size: 0.68rem;
+  font-weight: 500;
+  opacity: 0.9;
+}
