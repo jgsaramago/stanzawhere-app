@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Mail, Plane, Upload, X } from 'lucide-react'
 import { parseFlightEmail, readDroppedFile } from '../lib/flightEmail'
 import { toDateKey, uid } from '../lib/dates'
+import { canEditPerson } from '../lib/permissions'
 import { approverForPerson } from '../data/seed'
 import type { ParsedFlightEmail, Person, ScheduleEvent } from '../types'
 
@@ -16,7 +17,12 @@ export function FlightImportModal({
   onClose: () => void
   onImport: (events: ScheduleEvent[]) => void
 }) {
-  const [personId, setPersonId] = useState(currentUser.id)
+  const editablePeople = people.filter((p) =>
+    canEditPerson(currentUser.id, p.id),
+  )
+  const [personId, setPersonId] = useState(
+    () => editablePeople[0]?.id ?? currentUser.id,
+  )
   const [dragging, setDragging] = useState(false)
   const [raw, setRaw] = useState('')
   const [parsed, setParsed] = useState<ParsedFlightEmail | null>(null)
@@ -128,7 +134,7 @@ export function FlightImportModal({
         <label>
           Traveler
           <select value={personId} onChange={(e) => setPersonId(e.target.value)}>
-            {people.map((p) => (
+            {editablePeople.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name} · {p.homeCity}
               </option>

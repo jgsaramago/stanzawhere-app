@@ -6,9 +6,9 @@ import {
 import type { AppState, Person, ScheduleEvent } from '../types'
 
 /** Bump when storage shape changes */
-const STORAGE_KEY = 'stanza-where-v8'
+const STORAGE_KEY = 'stanza-where-v9'
 /** Prior state keys to migrate from (not wiped until successfully read). */
-const MIGRATE_FROM_KEYS = ['stanza-where-v7', 'stanza-where-v6']
+const MIGRATE_FROM_KEYS = ['stanza-where-v8', 'stanza-where-v7', 'stanza-where-v6']
 const HISTORY_KEY = 'stanza-where-history-v1'
 const CHATBOT_POS_KEY = 'stanza-where-stanbot-pos'
 const LEGACY_KEYS = [

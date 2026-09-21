@@ -125,7 +125,11 @@ export function placeForPersonDay(
   events: ScheduleEvent[],
   person: Person,
   day: Date,
-): { place: string; kind: 'pto' | 'travel' | 'location' | 'home'; pending: boolean } {
+): {
+  place: string
+  kind: 'pto' | 'travel' | 'location' | 'home' | 'remote'
+  pending: boolean
+} {
   const dayEvents = eventsForPersonDay(events, person.id, day, [
     'approved',
     'pending',
@@ -154,7 +158,8 @@ export function placeForPersonDay(
       pending: loc.status === 'pending',
     }
   }
-  return { place: person.homeCity, kind: 'home', pending: false }
+  // No travel / location / PTO logged → default to remote
+  return { place: 'Remote', kind: 'remote', pending: false }
 }
 
 const PLACE_PALETTE = [
@@ -170,8 +175,12 @@ const PLACE_PALETTE = [
   '#A21CAF',
 ]
 
-export function colorForPlace(place: string, kind: 'pto' | 'travel' | 'location' | 'home'): string {
+export function colorForPlace(
+  place: string,
+  kind: 'pto' | 'travel' | 'location' | 'home' | 'remote',
+): string {
   if (kind === 'pto') return '#94A3B8'
+  if (kind === 'remote' || place.trim().toLowerCase() === 'remote') return '#CBD5E1'
   const key = place.trim().toLowerCase()
   const known: Record<string, string> = {
     'san francisco': '#0F766E',
@@ -189,6 +198,8 @@ export function colorForPlace(place: string, kind: 'pto' | 'travel' | 'location'
     chesapeake: '#475569',
     'washington dc': '#475569',
     'washington d.c.': '#475569',
+    denver: '#EA580C',
+    remote: '#CBD5E1',
   }
   if (known[key]) return known[key]
   let hash = 0

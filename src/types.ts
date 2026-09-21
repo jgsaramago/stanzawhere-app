@@ -2,6 +2,51 @@ export type EventType = 'travel' | 'pto' | 'location'
 export type ApprovalStatus = 'draft' | 'pending' | 'approved' | 'rejected'
 export type UserRole = 'member' | 'manager'
 
+export type DressCode =
+  | 'formal'
+  | 'business'
+  | 'smart-business'
+  | 'business-casual'
+  | 'casual'
+  | 'sporty'
+
+export const DRESS_CODES: {
+  id: DressCode
+  label: string
+  hint: string
+}[] = [
+  {
+    id: 'formal',
+    label: 'Formal',
+    hint: 'Gala events — smoking / black tie & gala dress',
+  },
+  {
+    id: 'business',
+    label: 'Business',
+    hint: 'Suit and tie',
+  },
+  {
+    id: 'smart-business',
+    label: 'Smart business',
+    hint: 'Suit but no tie',
+  },
+  {
+    id: 'business-casual',
+    label: 'Business casual',
+    hint: 'Chinos and shirt',
+  },
+  {
+    id: 'casual',
+    label: 'Casual',
+    hint: 'Fashion / everyday casual',
+  },
+  {
+    id: 'sporty',
+    label: 'Sporty',
+    hint: 'Activewear / athletic',
+  },
+]
+
 export interface Person {
   id: string
   name: string
@@ -49,6 +94,8 @@ export interface ScheduleEvent {
   location?: string
   countryCode?: string
   notes?: string
+  /** Optional attire expectation for the trip / onsite */
+  dressCode?: DressCode
   status: ApprovalStatus
   requestedBy: string
   /** Approver assigned at submit time */

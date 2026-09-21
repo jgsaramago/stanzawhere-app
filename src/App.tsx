@@ -26,11 +26,11 @@ import {
 } from 'lucide-react'
 import { FlightImportModal } from './components/FlightImportModal'
 import { HelpChatbot } from './components/HelpChatbot'
-import { IntroSplash, shouldShowSplash } from './components/IntroSplash'
+import { DressCodeLegend, DressCodeMark } from './components/DressCodeMark'
 import { ProfileModal } from './components/ProfileModal'
 import { UserManualModal } from './components/UserManualModal'
 import type { ChatAction } from './data/manual'
-import { approverForPerson, COUNTRY_NAMES, HOLIDAYS, TIMEZONE_LANES } from './data/seed'
+import { approverForPerson, COUNTRY_OPTIONS, COUNTRY_NAMES, HOLIDAYS, TIMEZONE_LANES } from './data/seed'
 import {
   addMonths,
   colorForPlace,
@@ -45,6 +45,7 @@ import {
   uid,
   weekLocationForPerson,
 } from './lib/dates'
+import { canEditAll, canEditPerson } from './lib/permissions'
 import {
   deleteEvent,
   ensureFixedDemoEvents,
@@ -61,11 +62,13 @@ import {
 } from './lib/storage'
 import type {
   ApprovalStatus,
+  DressCode,
   EventType,
   FlightSegment,
   Person,
   ScheduleEvent,
 } from './types'
+import { DRESS_CODES } from './types'
 import './App.css'
 
 type Tab = 'calendar' | 'approvals'
@@ -126,7 +129,12 @@ function EventForm({
   onClose: () => void
   onSubmit: (event: ScheduleEvent) => void
 }) {
-  const [personId, setPersonId] = useState(currentUser.id)
+  const editablePeople = people.filter((p) =>
+    canEditPerson(currentUser.id, p.id),
+  )
+  const [personId, setPersonId] = useState(
+    () => editablePeople[0]?.id ?? currentUser.id,
+  )
   const [type, setType] = useState<EventType>('travel')
   const [title, setTitle] = useState('')
   const [startDate, setStartDate] = useState(toDateKey(new Date()))
@@ -134,6 +142,7 @@ function EventForm({
   const [location, setLocation] = useState('')
   const [countryCode, setCountryCode] = useState(currentUser.homeCountry)
   const [notes, setNotes] = useState('')
+  const [dressCode, setDressCode] = useState<DressCode | ''>('business-casual')
   const [asDraft, setAsDraft] = useState(false)
 
   const subject = people.find((p) => p.id === personId) ?? currentUser
@@ -166,6 +175,7 @@ function EventForm({
       location: location.trim() || undefined,
       countryCode,
       notes: notes.trim() || undefined,
+      dressCode: dressCode || undefined,
       status,
       requestedBy: currentUser.id,
       approverId: subject.approverId,
@@ -196,7 +206,7 @@ function EventForm({
           <label>
             Person
             <select value={personId} onChange={(e) => setPersonId(e.target.value)}>
-              {people.map((p) => (
+              {editablePeople.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>
@@ -245,9 +255,24 @@ function EventForm({
           <label>
             Country (holidays)
             <select value={countryCode} onChange={(e) => setCountryCode(e.target.value)}>
-              {Object.entries(COUNTRY_NAMES).map(([code, name]) => (
+              {COUNTRY_OPTIONS.map(([code, name]) => (
                 <option key={code} value={code}>
                   {name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="span-2">
+            Dress code
+            <select
+              value={dressCode}
+              onChange={(e) => setDressCode(e.target.value as DressCode | '')}
+            >
+              <option value="">None / not specified</option>
+              {DRESS_CODES.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.label} — {d.hint}
                 </option>
               ))}
             </select>
@@ -306,7 +331,6 @@ export default function App() {
   const [showForm, setShowForm] = useState(false)
   const [showFlightImport, setShowFlightImport] = useState(false)
   const [showManual, setShowManual] = useState(false)
-  const [showSplash, setShowSplash] = useState(() => shouldShowSplash())
   const [profilePerson, setProfilePerson] = useState<Person | null>(null)
   const [selectedEvent, setSelectedEvent] = useState<ScheduleEvent | null>(null)
   const [reviewNote, setReviewNote] = useState('')
@@ -326,6 +350,11 @@ export default function App() {
 
   const currentUser =
     state.people.find((p) => p.id === state.currentUserId) ?? state.people[0]
+  const isGlobalEditor = canEditAll(currentUser.id)
+
+  function denyEdit(action = 'edit this') {
+    showToast(`You can only ${action} on your own row — switch Acting as if needed`)
+  }
 
   const teamCountries = useMemo(
     () => [...new Set(state.people.map((p) => p.homeCountry))],
@@ -439,13 +468,17 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
-  // Inject fixed team bookings into whatever was already in localStorage.
+  // Keep fixed demo bookings (incl. dress codes) in sync with seed.
   useEffect(() => {
     setState((prev) => {
       const events = ensureFixedDemoEvents(prev.events)
-      const prevIds = new Set(prev.events.map((e) => e.id))
-      const needsMerge = events.some((e) => !prevIds.has(e.id))
-      if (!needsMerge) return prev
+      const changed =
+        events.length !== prev.events.length ||
+        events.some((e) => {
+          const old = prev.events.find((x) => x.id === e.id)
+          return !old || old.dressCode !== e.dressCode || old.location !== e.location
+        })
+      if (!changed) return prev
       const next = { ...prev, events }
       saveState(next)
       return next
@@ -453,6 +486,10 @@ export default function App() {
   }, [])
 
   function addEvent(event: ScheduleEvent) {
+    if (!canEditPerson(currentUser.id, event.personId)) {
+      denyEdit('add requests')
+      return
+    }
     const base = stateRef.current
     persist({ ...base, events: upsertEvent(base.events, event) })
     setShowForm(false)
@@ -461,25 +498,48 @@ export default function App() {
 
   function addEvents(events: ScheduleEvent[]) {
     if (events.length === 0) return
+    const allowed = events.filter((e) =>
+      canEditPerson(currentUser.id, e.personId),
+    )
+    if (allowed.length === 0) {
+      denyEdit('create requests')
+      return
+    }
+    if (allowed.length < events.length) {
+      showToast(
+        `Created ${allowed.length} of ${events.length} — others were outside your edit rights`,
+      )
+    }
     const base = stateRef.current
     let next = base.events
-    for (const event of events) next = upsertEvent(next, event)
+    for (const event of allowed) next = upsertEvent(next, event)
     persist({ ...base, events: next })
     setShowForm(false)
-    if (events.some((e) => e.status === 'pending')) setTab('approvals')
+    if (allowed.some((e) => e.status === 'pending')) setTab('approvals')
   }
 
   function importEvents(events: ScheduleEvent[]) {
+    const allowed = events.filter((e) =>
+      canEditPerson(currentUser.id, e.personId),
+    )
+    if (allowed.length === 0) {
+      denyEdit('import flights')
+      return
+    }
     const base = stateRef.current
     let next = base.events
-    for (const event of events) next = upsertEvent(next, event)
+    for (const event of allowed) next = upsertEvent(next, event)
     persist({ ...base, events: next })
     setShowFlightImport(false)
-    if (events.some((e) => e.status === 'pending')) setTab('approvals')
+    if (allowed.some((e) => e.status === 'pending')) setTab('approvals')
     showToast('Flight imported — Cmd+Z to undo')
   }
 
   function removeEvent(event: ScheduleEvent, { confirm = false } = {}) {
+    if (!canEditPerson(currentUser.id, event.personId)) {
+      denyEdit('delete events')
+      return
+    }
     const label = event.title || EVENT_META[event.type].label
     if (confirm && !window.confirm(`Delete “${label}” from the calendar?`)) return
     persist({
@@ -509,6 +569,10 @@ export default function App() {
   }
 
   function submitDraft(event: ScheduleEvent) {
+    if (!canEditPerson(currentUser.id, event.personId)) {
+      denyEdit('submit requests')
+      return
+    }
     const person = state.people.find((p) => p.id === event.personId)
     const approverId = person?.approverId ?? null
     const updated: ScheduleEvent = {
@@ -522,6 +586,10 @@ export default function App() {
   }
 
   function hardReset() {
+    if (!isGlobalEditor) {
+      denyEdit('reload the roster')
+      return
+    }
     if (
       !window.confirm(
         'Reload demo roster? Your current calendar will be saved to history (Cmd+Z / Restore flight).',
@@ -533,7 +601,6 @@ export default function App() {
     setTab('calendar')
     setMode('week')
     setAnchor(new Date())
-    setShowSplash(true)
     showToast('Roster reloaded — Cmd+Z or Restore flight if needed')
   }
 
@@ -568,6 +635,12 @@ export default function App() {
   return (
     <div className="app">
       {toast && <div className="toast">{toast}</div>}
+      {!isGlobalEditor && (
+        <div className="perm-banner">
+          Acting as <strong>{currentUser.name}</strong> — you can edit your own row
+          only. João, Vaidehi, and Erica can edit everyone.
+        </div>
+      )}
       <header className="topbar">
         <div className="brand">
           <div className="brand-mark" aria-hidden>
@@ -621,6 +694,7 @@ export default function App() {
           <button
             className="btn ghost"
             onClick={hardReset}
+            disabled={!isGlobalEditor}
             title="Reload demo roster (kept in undo history)"
           >
             <RotateCcw size={14} />
@@ -704,11 +778,14 @@ export default function App() {
               <span className="chip chip-travel">Travel</span>
               <span className="chip chip-pto">PTO</span>
               <span className="chip chip-location">Location</span>
+              <span className="chip chip-remote">Remote</span>
               <span className="chip chip-weekend">Weekend</span>
               <span className="chip chip-holiday">Holiday</span>
               <span className="chip chip-pending">Pending</span>
             </div>
           </div>
+
+          <DressCodeLegend />
 
           {mode === 'week' && (
             <>
@@ -753,21 +830,13 @@ export default function App() {
                     return (
                       <div
                         key={day.toISOString()}
-                        className={`day-head cell ${isToday(day) ? 'is-today' : ''} ${
+                        className={`day-head cell day-head-compact ${isToday(day) ? 'is-today' : ''} ${
                           isWeekend(day) ? 'is-weekend' : ''
                         } ${dayHolidays.length ? 'has-holiday' : ''}`}
                       >
                         <div className="day-label">
                           <strong>{format(day, 'EEE')}</strong>
                           <span>{format(day, 'MMM d')}</span>
-                        </div>
-                        <div className="tz-times">
-                          {TIMEZONE_LANES.map((lane) => (
-                            <div key={lane.id}>
-                              <span className="tz-code">{lane.label}</span>
-                              <span>{formatTzTime(day, lane.timezone)}</span>
-                            </div>
-                          ))}
                         </div>
                         {dayHolidays.length > 0 && (
                           <div className="day-holidays">
@@ -794,7 +863,11 @@ export default function App() {
                           type="button"
                           className="person-cell cell person-profile-btn"
                           onClick={() => setProfilePerson(person)}
-                          title={`Edit ${person.name}'s profile`}
+                          title={
+                            canEditPerson(currentUser.id, person.id)
+                              ? `Edit ${person.name}'s profile`
+                              : `View ${person.name}'s profile`
+                          }
                         >
                           <Avatar person={person} />
                           <div className="person-meta">
@@ -847,8 +920,18 @@ export default function App() {
                                     day,
                                     new Date(`${event.startDate}T12:00:00`),
                                   )
+                                  const dress =
+                                    event.type !== 'pto' && event.dressCode
+                                      ? DRESS_CODES.find((d) => d.id === event.dressCode)
+                                      : undefined
                                   return (
-                                    <div key={event.id} className="event-block">
+                                    <div
+                                      key={event.id}
+                                      className={`event-block ${dress ? 'has-dress-mark' : ''}`}
+                                    >
+                                      {dress && (
+                                        <DressCodeMark id={dress.id} />
+                                      )}
                                       <button
                                         type="button"
                                         className={`event-chip ${meta.className} status-${event.status}`}
@@ -858,7 +941,11 @@ export default function App() {
                                           e.stopPropagation()
                                           removeEvent(event)
                                         }}
-                                        title={`${event.title} (${event.status}) — double-click to delete`}
+                                        title={`${event.title} (${event.status})${
+                                          canEditPerson(currentUser.id, event.personId)
+                                            ? ' — double-click to delete'
+                                            : ''
+                                        }`}
                                       >
                                         <Icon size={12} />
                                         <span>
@@ -894,6 +981,11 @@ export default function App() {
                                     </div>
                                   )
                                 })}
+                                {dayEvents.length === 0 && !isWeekend(day) && (
+                                  <div className="event-chip chip-remote remote-default">
+                                    Remote
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )
@@ -1198,8 +1290,13 @@ export default function App() {
       {profilePerson && (
         <ProfileModal
           person={profilePerson}
+          readOnly={!canEditPerson(currentUser.id, profilePerson.id)}
           onClose={() => setProfilePerson(null)}
           onSave={(person) => {
+            if (!canEditPerson(currentUser.id, person.id)) {
+              denyEdit('edit profiles')
+              return
+            }
             persist({
               ...state,
               people: upsertPerson(state.people, person),
@@ -1209,8 +1306,6 @@ export default function App() {
           }}
         />
       )}
-
-      {showSplash && <IntroSplash onDone={() => setShowSplash(false)} />}
 
       <HelpChatbot
         onAction={handleChatAction}
@@ -1265,6 +1360,17 @@ export default function App() {
                 <strong>Location</strong>
                 <span>{selectedEvent.location || '—'}</span>
               </p>
+              <p>
+                <strong>Dress code</strong>
+                <span>
+                  {selectedEvent.dressCode
+                    ? (() => {
+                        const d = DRESS_CODES.find((x) => x.id === selectedEvent.dressCode)
+                        return d ? `${d.label} — ${d.hint}` : selectedEvent.dressCode
+                      })()
+                    : '—'}
+                </span>
+              </p>
               {selectedEvent.notes && (
                 <p className="span-2">
                   <strong>Notes</strong>
@@ -1304,13 +1410,15 @@ export default function App() {
             )}
 
             <footer className="modal-footer between">
-              <button
-                type="button"
-                className="btn danger"
-                onClick={() => removeEvent(selectedEvent)}
-              >
-                Delete
-              </button>
+              {canEditPerson(currentUser.id, selectedEvent.personId) && (
+                <button
+                  type="button"
+                  className="btn danger"
+                  onClick={() => removeEvent(selectedEvent)}
+                >
+                  Delete
+                </button>
+              )}
               <div className="modal-footer-right">
                 {canReview(selectedEvent) ? (
                   <>

@@ -10,7 +10,7 @@ export const MANUAL_SECTIONS: ManualSection[] = [
     title: 'What is StanzaWhere?',
     body: [
       'StanzaWhere is the internal calendar for Stanza travel, PTO, and weekly locations.',
-      'People are rows on the left. Days are columns. Timezone lanes (PT → CT → ET → WET → CET) show comparable times across offices.',
+      'People are rows on the left. Days are columns. Timezone lanes (PT → MT → CT → ET → WET → CET) show comparable times across offices.',
     ],
   },
   {
@@ -115,7 +115,7 @@ export function answerHelpQuery(input: string): ChatReply {
 
   if (/(week|timezone|pt|ct|et|cet|wet)/.test(q)) {
     return {
-      text: 'Week view lists people as rows and days as columns, with PT → CT → ET → WET → CET time lanes in the header.',
+      text: 'Week view lists people as rows and days as columns, with PT → MT → CT → ET → WET → CET time lanes in the header.',
       actions: [{ id: 'week-view', label: 'Show week view' }],
     }
   }

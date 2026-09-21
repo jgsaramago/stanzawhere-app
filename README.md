@@ -7,7 +7,7 @@ Guides: [https://ai-stanza.github.io/stanza/](https://ai-stanza.github.io/stanza
 ## Features
 
 - **People rows** on the left; **day columns** across the week
-- **Multi-timezone header** (PT / CT / ET / WET / CET) with live local times
+- **Multi-timezone header** (PT / MT / CT / ET / WET / CET) with live local times
 - Event types: **Travel**, **PTO**, **Week location**
 - **Public holidays** for US and PT shown in the week strip and on each person’s home-country days
 - **Approval workflow**: draft → pending → approved / rejected

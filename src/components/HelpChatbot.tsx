@@ -10,6 +10,7 @@ import {
   parseBookingIntent,
   type BookingIntent,
 } from '../lib/chatBooking'
+import { canEditPerson } from '../lib/permissions'
 import {
   loadChatbotPos,
   saveChatbotPos,
@@ -196,9 +197,25 @@ export function HelpChatbot({
       )
     }
 
-    onCreateEvents(events)
+    const allowed = events.filter((e) =>
+      canEditPerson(currentUser.id, e.personId),
+    )
+    if (allowed.length === 0) {
+      setPendingBooking(null)
+      return 'You can only book for yourself — switch Acting as, or ask João, Vaidehi, or Erica to edit other rows.'
+    }
+    if (allowed.length < events.length) {
+      onCreateEvents(allowed)
+      setPendingBooking(null)
+      return `Booked ${allowed.length} of ${events.length} — skipped colleagues outside your edit rights. ${formatMultiBookingConfirmation(allowed, people, (person) => {
+        const approver = approverForPerson(person)
+        return approver?.name ?? null
+      })}`
+    }
+
+    onCreateEvents(allowed)
     setPendingBooking(null)
-    return formatMultiBookingConfirmation(events, people, (person) => {
+    return formatMultiBookingConfirmation(allowed, people, (person) => {
       const approver = approverForPerson(person)
       return approver?.name ?? null
     })
