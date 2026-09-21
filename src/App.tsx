@@ -660,7 +660,17 @@ export default function App() {
         events.length !== prev.events.length ||
         events.some((e) => {
           const old = prev.events.find((x) => x.id === e.id)
-          return !old || old.dressCode !== e.dressCode || old.location !== e.location
+          return (
+            !old ||
+            old.dressCode !== e.dressCode ||
+            old.location !== e.location ||
+            old.title !== e.title ||
+            old.startDate !== e.startDate ||
+            old.endDate !== e.endDate ||
+            old.status !== e.status ||
+            old.type !== e.type ||
+            old.notes !== e.notes
+          )
         })
       const teamChanged =
         teamEvents.length !== (prev.teamEvents ?? []).length ||

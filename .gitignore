@@ -36,3 +36,4 @@ __pycache__/
 *.sln
 *.sw?
 .vercel
+.gh-pages-deploy/
