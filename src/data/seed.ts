@@ -530,6 +530,38 @@ export function buildFixedDemoEvents(now = new Date()): ScheduleEvent[] {
     })
   }
 
+  // João, Anirban, Greg, Alok, Hani, Isak, Boby — Dallas co-location Oct 5–8
+  for (const personId of [
+    'joao',
+    'anirban',
+    'greg',
+    'alok',
+    'hani',
+    'isak',
+    'boby',
+  ] as const) {
+    const person = PEOPLE.find((p) => p.id === personId)
+    if (!person) continue
+    events.push({
+      id: `demo_dallas_coloc_${personId}`,
+      personId,
+      type: 'location',
+      title: 'Dallas co-location',
+      startDate: '2026-10-05',
+      endDate: '2026-10-08',
+      location: 'Dallas',
+      countryCode: 'US',
+      notes: 'Team co-location in Dallas, USA. Dress code: casual and sporty.',
+      dressCode: 'casual',
+      status: 'approved',
+      requestedBy: personId,
+      approverId: null,
+      reviewedBy: personId,
+      createdAt: ts,
+      updatedAt: ts,
+    })
+  }
+
   return events
 }
 
@@ -552,6 +584,21 @@ export function buildFixedDemoTeamEvents(now = new Date()): TeamEvent[] {
       countryCode: 'DE',
       location: 'Walldorf, Germany',
       dressCode: 'business-casual',
+      createdBy: 'joao',
+      createdAt: ts,
+      updatedAt: ts,
+    },
+    {
+      id: 'demo_team_dallas_coloc',
+      title: 'Dallas co-location',
+      description:
+        'Team co-location in Dallas, USA (João, Anirban, Greg, Alok, Hani, Isak, Boby). Dress code: casual and sporty.',
+      startDate: '2026-10-05',
+      endDate: '2026-10-08',
+      city: 'Dallas',
+      countryCode: 'US',
+      location: 'Dallas, USA',
+      dressCode: 'casual',
       createdBy: 'joao',
       createdAt: ts,
       updatedAt: ts,

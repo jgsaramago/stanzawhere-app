@@ -1243,7 +1243,9 @@ function addEvents(events: ScheduleEvent[]) {
                                     new Date(`${event.startDate}T12:00:00`),
                                   )
                                   const dress =
-                                    event.type === 'travel' && event.dressCode
+                                    (event.type === 'travel' ||
+                                      event.type === 'location') &&
+                                    event.dressCode
                                       ? DRESS_CODES.find((d) => d.id === event.dressCode)
                                       : undefined
                                   const hotelLabel =
