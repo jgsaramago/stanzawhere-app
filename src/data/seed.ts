@@ -434,7 +434,7 @@ export function buildFixedDemoEvents(now = new Date()): ScheduleEvent[] {
     const person = PEOPLE.find((p) => p.id === trip.personId)
     if (!person) continue
     const approved = !person.approverId
-    const hotelNote = trip.hotel ? `Hotel: ${trip.hotel}` : 'Hotel TBD'
+    const hotelNote = trip.hotel ? `Hotel: ${trip.hotel}` : 'Hotel: TBD'
     const arriveFlight = trip.arriveFlight ?? `${trip.fromCode}-FRA`
     const departFlight = trip.departFlight ?? `FRA-${trip.toCode}`
 
@@ -447,6 +447,7 @@ export function buildFixedDemoEvents(now = new Date()): ScheduleEvent[] {
       endDate: trip.departDate,
       location: 'SAP Stanza workshop',
       countryCode: 'DE',
+      hotel: trip.hotel,
       notes: `${hotelNote}. Arrive FRA ${trip.arriveTime} from ${trip.fromCode}; depart FRA ${trip.departTime} to ${trip.toCode}.`,
       dressCode: 'business-casual',
       status: approved ? 'approved' : 'pending',
@@ -483,11 +484,12 @@ export function buildFixedDemoEvents(now = new Date()): ScheduleEvent[] {
       id: `demo_heidelberg_loc_${trip.personId}`,
       personId: trip.personId,
       type: 'location',
-      title: 'SAP Stanza workshop',
+      title: hotelNote,
       startDate: trip.arriveDate,
       endDate: trip.departDate,
       location: 'SAP Stanza workshop',
       countryCode: 'DE',
+      hotel: trip.hotel,
       notes: hotelNote,
       dressCode: 'business-casual',
       status: approved ? 'approved' : 'pending',

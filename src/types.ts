@@ -93,6 +93,8 @@ export interface ScheduleEvent {
   endDate: string
   location?: string
   countryCode?: string
+  /** Hotel for overnight stays (travel / onsite weeks) */
+  hotel?: string
   notes?: string
   /** Optional attire expectation for the trip / onsite */
   dressCode?: DressCode

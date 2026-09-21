@@ -949,9 +949,15 @@ export default function App() {
                                       >
                                         <Icon size={12} />
                                         <span>
-                                          {isStart
-                                            ? event.title
-                                            : event.location || meta.label}
+                                          {event.type === 'location'
+                                            ? event.hotel
+                                              ? `Hotel: ${event.hotel}`
+                                              : event.title.startsWith('Hotel')
+                                                ? event.title
+                                                : 'Hotel: TBD'
+                                            : isStart
+                                              ? event.title
+                                              : event.location || meta.label}
                                         </span>
                                       </button>
                                       {dayFlights.map((f) => (
@@ -1360,6 +1366,12 @@ export default function App() {
                 <strong>Location</strong>
                 <span>{selectedEvent.location || '—'}</span>
               </p>
+              {(selectedEvent.type === 'travel' || selectedEvent.type === 'location') && (
+                <p>
+                  <strong>Hotel</strong>
+                  <span>{selectedEvent.hotel ? selectedEvent.hotel : 'TBD'}</span>
+                </p>
+              )}
               <p>
                 <strong>Dress code</strong>
                 <span>
