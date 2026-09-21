@@ -327,76 +327,173 @@ function isoDaysFrom(base: Date, offset: number): string {
   return d.toISOString().slice(0, 10)
 }
 
-const DALLAS_TRAVEL_IDS = ['darwin', 'charlie', 'nick', 'greg', 'anirban'] as const
+const OBSOLETE_DEMO_ID_PREFIXES = [
+  'demo_dallas_',
+  'demo_chicago_',
+  'demo_nyc_',
+] as const
+
+export function isObsoleteDemoEventId(id: string): boolean {
+  return OBSOLETE_DEMO_ID_PREFIXES.some((prefix) => id.startsWith(prefix))
+}
+
+type HeidelbergTrip = {
+  personId: string
+  arriveDate: string
+  departDate: string
+  arriveTime: string
+  departTime: string
+  fromCode: string
+  toCode: string
+  arriveFlight?: string
+  departFlight?: string
+  hotel?: string
+}
+
+/** Heidelberg / FRA week — Sep 27–Oct 1 2026 (stable ids for refresh upsert). */
+const HEIDELBERG_TRIPS: HeidelbergTrip[] = [
+  {
+    personId: 'nick',
+    arriveDate: '2026-09-28',
+    departDate: '2026-09-30',
+    arriveTime: '09:45',
+    departTime: '17:15',
+    fromCode: 'SFO',
+    toCode: 'JFK',
+    arriveFlight: 'UA58',
+    hotel: 'Heidelberg Marriott',
+  },
+  {
+    personId: 'charlie',
+    arriveDate: '2026-09-28',
+    departDate: '2026-09-30',
+    arriveTime: '09:45',
+    departTime: '17:15',
+    fromCode: 'SFO',
+    toCode: 'JFK',
+    hotel: 'Heidelberg Marriott',
+  },
+  {
+    personId: 'somrat',
+    arriveDate: '2026-09-28',
+    departDate: '2026-09-30',
+    arriveTime: '09:10',
+    departTime: '17:30',
+    fromCode: 'EWR',
+    toCode: 'SFO',
+    hotel: 'Heidelberg Marriott Hotel',
+  },
+  {
+    personId: 'matt',
+    arriveDate: '2026-09-28',
+    departDate: '2026-09-30',
+    arriveTime: '09:45',
+    departTime: '17:30',
+    fromCode: 'SFO',
+    toCode: 'SFO',
+    arriveFlight: 'UA58',
+  },
+  {
+    personId: 'anirban',
+    arriveDate: '2026-09-28',
+    departDate: '2026-10-01',
+    arriveTime: '08:45',
+    departTime: '10:55',
+    fromCode: 'DFW',
+    toCode: 'DFW',
+    hotel: 'Heidelberg Marriott',
+  },
+  {
+    personId: 'joao',
+    arriveDate: '2026-09-28',
+    departDate: '2026-09-30',
+    arriveTime: '11:30',
+    departTime: '13:20',
+    fromCode: 'LIS',
+    toCode: 'LIS',
+    hotel: 'Heidelberg Marriott',
+  },
+  {
+    personId: 'jonathan',
+    arriveDate: '2026-09-27',
+    departDate: '2026-10-01',
+    arriveTime: '05:45',
+    departTime: '12:30',
+    fromCode: 'BOS',
+    toCode: 'BOS',
+    hotel: 'Heidelberg Marriott Hotel',
+  },
+]
 
 /** Stable demo bookings that must appear on the calendar after refresh. */
 export function buildFixedDemoEvents(now = new Date()): ScheduleEvent[] {
   const ts = now.toISOString()
   const events: ScheduleEvent[] = []
 
-  for (const personId of DALLAS_TRAVEL_IDS) {
-    const person = PEOPLE.find((p) => p.id === personId)!
+  for (const trip of HEIDELBERG_TRIPS) {
+    const person = PEOPLE.find((p) => p.id === trip.personId)
+    if (!person) continue
     const approved = !person.approverId
-    events.push({
-      id: `demo_dallas_${personId}`,
-      personId,
-      type: 'travel',
-      title: 'Travel to Dallas',
-      startDate: '2026-08-18',
-      endDate: '2026-08-20',
-      location: 'Dallas',
-      countryCode: 'US',
-      notes: 'Dallas travel Tue–Thu next week (demo)',
-      dressCode: 'business',
-      status: approved ? 'approved' : 'pending',
-      requestedBy: 'joao',
-      approverId: person.approverId,
-      reviewedBy: approved ? personId : undefined,
-      createdAt: ts,
-      updatedAt: ts,
-    })
-  }
+    const hotelNote = trip.hotel ? `Hotel: ${trip.hotel}` : 'Hotel TBD'
+    const arriveFlight = trip.arriveFlight ?? `${trip.fromCode}-FRA`
+    const departFlight = trip.departFlight ?? `FRA-${trip.toCode}`
 
-  for (const person of PEOPLE) {
-    const approved = !person.approverId
     events.push({
-      id: `demo_chicago_${person.id}`,
-      personId: person.id,
-      type: 'location',
-      title: 'Week in Chicago',
-      startDate: '2026-08-31',
-      endDate: '2026-09-04',
-      location: 'Chicago',
-      countryCode: 'US',
-      notes: 'All-team week location (demo)',
+      id: `demo_heidelberg_travel_${trip.personId}`,
+      personId: trip.personId,
+      type: 'travel',
+      title: 'Travel to Heidelberg',
+      startDate: trip.arriveDate,
+      endDate: trip.departDate,
+      location: 'Heidelberg',
+      countryCode: 'DE',
+      notes: `${hotelNote}. Arrive FRA ${trip.arriveTime} from ${trip.fromCode}; depart FRA ${trip.departTime} to ${trip.toCode}.`,
       dressCode: 'business-casual',
       status: approved ? 'approved' : 'pending',
-      requestedBy: 'joao',
+      requestedBy: trip.personId,
       approverId: person.approverId,
-      reviewedBy: approved ? person.id : undefined,
+      reviewedBy: approved ? trip.personId : undefined,
       createdAt: ts,
       updatedAt: ts,
+      flights: [
+        {
+          flightNumber: arriveFlight,
+          fromCode: trip.fromCode,
+          toCode: 'FRA',
+          fromCity: trip.fromCode,
+          toCity: 'Frankfurt',
+          date: trip.arriveDate,
+          arriveTime: trip.arriveTime,
+          role: 'arrival',
+        },
+        {
+          flightNumber: departFlight,
+          fromCode: 'FRA',
+          toCode: trip.toCode,
+          fromCity: 'Frankfurt',
+          toCity: trip.toCode,
+          date: trip.departDate,
+          departTime: trip.departTime,
+          role: 'departure',
+        },
+      ],
     })
-  }
 
-  for (const person of PEOPLE) {
-    const approved = !person.approverId
     events.push({
-      id: `demo_nyc_${person.id}`,
-      personId: person.id,
+      id: `demo_heidelberg_loc_${trip.personId}`,
+      personId: trip.personId,
       type: 'location',
-      title: 'Week in New York',
-      startDate: '2026-09-14',
-      endDate: '2026-09-18',
-      location: 'New York',
-      countryCode: 'US',
-      notes:
-        'All-team week location (demo). San Francisco was the alternative — edit if you prefer SF.',
-      dressCode: 'smart-business',
+      title: 'Week in Heidelberg',
+      startDate: trip.arriveDate,
+      endDate: trip.departDate,
+      location: 'Heidelberg',
+      countryCode: 'DE',
+      notes: hotelNote,
+      dressCode: 'business-casual',
       status: approved ? 'approved' : 'pending',
-      requestedBy: 'joao',
+      requestedBy: trip.personId,
       approverId: person.approverId,
-      reviewedBy: approved ? person.id : undefined,
+      reviewedBy: approved ? trip.personId : undefined,
       createdAt: ts,
       updatedAt: ts,
     })

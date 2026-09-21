@@ -1,14 +1,15 @@
 import {
   buildFixedDemoEvents,
   buildSeedEvents,
+  isObsoleteDemoEventId,
   PEOPLE,
 } from '../data/seed'
 import type { AppState, Person, ScheduleEvent } from '../types'
 
 /** Bump when storage shape changes */
-const STORAGE_KEY = 'stanza-where-v9'
+const STORAGE_KEY = 'stanza-where-v10'
 /** Prior state keys to migrate from (not wiped until successfully read). */
-const MIGRATE_FROM_KEYS = ['stanza-where-v8', 'stanza-where-v7', 'stanza-where-v6']
+const MIGRATE_FROM_KEYS = ['stanza-where-v9', 'stanza-where-v8', 'stanza-where-v7', 'stanza-where-v6']
 const HISTORY_KEY = 'stanza-where-history-v1'
 const CHATBOT_POS_KEY = 'stanza-where-stanbot-pos'
 const LEGACY_KEYS = [
@@ -20,12 +21,12 @@ const LEGACY_KEYS = [
 ]
 
 /**
- * Ensure Dallas / Chicago / NYC demo bookings exist in saved calendars.
- * Upserts by stable demo_* ids so a hard refresh picks them up without wipe.
+ * Ensure Heidelberg week demos exist in saved calendars.
+ * Drops obsolete Dallas/Chicago/NYC demos and upserts by stable demo_* ids.
  */
 export function ensureFixedDemoEvents(events: ScheduleEvent[]): ScheduleEvent[] {
   const demos = buildFixedDemoEvents()
-  let next = [...events]
+  let next = events.filter((e) => !isObsoleteDemoEventId(e.id))
   for (const demo of demos) {
     const idx = next.findIndex((e) => e.id === demo.id)
     if (idx === -1) next = [...next, demo]
