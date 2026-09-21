@@ -1276,10 +1276,12 @@ function addEvents(events: ScheduleEvent[]) {
                                             ? event.title
                                             : event.type === 'location'
                                               ? event.hotel
-                                                ? `Hotel: ${event.hotel}`
-                                                : event.title.startsWith('Hotel')
-                                                  ? event.title
-                                                  : 'Hotel: TBD'
+                                                ? event.hotel.startsWith('Hotel')
+                                                  ? event.hotel
+                                                  : `Hotel: ${event.hotel}`
+                                                : event.title ||
+                                                  event.location ||
+                                                  meta.label
                                               : isStart
                                                 ? event.title
                                                 : event.location || meta.label}

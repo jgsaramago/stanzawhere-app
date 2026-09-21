@@ -507,6 +507,30 @@ export function buildFixedDemoEvents(now = new Date()): ScheduleEvent[] {
     }
   }
 
+  // Nick, Charlie, Darwin — New York / Juxtapose office Mon–Thu this week
+  for (const personId of ['nick', 'charlie', 'darwin'] as const) {
+    const person = PEOPLE.find((p) => p.id === personId)
+    if (!person) continue
+    const approved = !person.approverId
+    events.push({
+      id: `demo_juxtapose_nyc_${personId}`,
+      personId,
+      type: 'location',
+      title: 'Juxtapose office',
+      startDate: '2026-09-21',
+      endDate: '2026-09-24',
+      location: 'New York',
+      countryCode: 'US',
+      notes: 'Juxtapose office — Mon–Thu',
+      status: approved ? 'approved' : 'pending',
+      requestedBy: personId,
+      approverId: person.approverId,
+      reviewedBy: approved ? personId : undefined,
+      createdAt: ts,
+      updatedAt: ts,
+    })
+  }
+
   return events
 }
 
