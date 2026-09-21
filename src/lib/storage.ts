@@ -83,6 +83,29 @@ const SUPERSEDED_HOMES: Record<string, string[]> = {
   andrew: ['Washington DC', 'Washington D.C.', 'Washington', 'Washington, DC'],
 }
 
+/** Old titles replaced by roster corrections — prefer seed when localStorage still has these. */
+const SUPERSEDED_TITLES: Record<string, string[]> = {
+  greg: ['Team Lead'],
+  vaidehi: ['PMO'],
+  alok: ['Product'],
+  boby: ['Product'],
+  hani: ['Team'],
+  somrat: ['Team'],
+}
+
+function pickTitle(seed: Person, prev: Person): string {
+  const saved = prev.title?.trim() ?? ''
+  const superseded = SUPERSEDED_TITLES[seed.id] ?? []
+  if (
+    !saved ||
+    saved === seed.title ||
+    superseded.some((t) => t.toLowerCase() === saved.toLowerCase())
+  ) {
+    return seed.title
+  }
+  return saved
+}
+
 function pickHomeFields(seed: Person, prev: Person) {
   const savedCity = prev.homeCity?.trim() ?? ''
   const superseded = SUPERSEDED_HOMES[seed.id] ?? []
@@ -120,7 +143,7 @@ export function mergePeople(saved?: Person[]): Person[] {
       ...seed,
       name: prev.name?.trim() || seed.name,
       email: prev.email?.trim() || seed.email,
-      title: prev.title?.trim() || seed.title,
+      title: pickTitle(seed, prev),
       ...home,
       avatarColor: prev.avatarColor || seed.avatarColor,
       avatarUrl: prev.avatarUrl || seed.avatarUrl,
