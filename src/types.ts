@@ -123,9 +123,23 @@ export interface TimezoneLane {
   timezone: string
 }
 
+/** Shared calendar event (not tied to one person) — shown on the Event row. */
+export interface TeamEvent {
+  id: string
+  title: string
+  description?: string
+  startDate: string
+  endDate: string
+  location?: string
+  createdBy: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface AppState {
   people: Person[]
   events: ScheduleEvent[]
+  teamEvents: TeamEvent[]
   currentUserId: string
 }
 

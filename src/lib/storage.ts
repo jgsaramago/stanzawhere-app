@@ -7,9 +7,9 @@ import {
 import type { AppState, Person, ScheduleEvent } from '../types'
 
 /** Bump when storage shape changes */
-const STORAGE_KEY = 'stanza-where-v10'
+const STORAGE_KEY = 'stanza-where-v11'
 /** Prior state keys to migrate from (not wiped until successfully read). */
-const MIGRATE_FROM_KEYS = ['stanza-where-v9', 'stanza-where-v8', 'stanza-where-v7', 'stanza-where-v6']
+const MIGRATE_FROM_KEYS = ['stanza-where-v10', 'stanza-where-v9', 'stanza-where-v8', 'stanza-where-v7', 'stanza-where-v6']
 const HISTORY_KEY = 'stanza-where-history-v1'
 const CHATBOT_POS_KEY = 'stanza-where-stanbot-pos'
 const LEGACY_KEYS = [
@@ -107,6 +107,7 @@ function snapshot(state: AppState): AppState {
   return {
     people: structuredClone(state.people),
     events: structuredClone(state.events),
+    teamEvents: structuredClone(state.teamEvents ?? []),
     currentUserId: state.currentUserId,
   }
 }
@@ -122,6 +123,7 @@ export function loadHistory(): AppState[] {
       .map((s) => ({
         people: mergePeople(s.people),
         events: s.events,
+        teamEvents: Array.isArray(s.teamEvents) ? s.teamEvents : [],
         currentUserId: PEOPLE.some((p) => p.id === s.currentUserId)
           ? s.currentUserId
           : 'joao',
@@ -180,6 +182,7 @@ function normalizeLoaded(parsed: AppState): AppState | null {
   return {
     people,
     events,
+    teamEvents: Array.isArray(parsed.teamEvents) ? parsed.teamEvents : [],
     currentUserId: rosterIds.has(parsed.currentUserId)
       ? parsed.currentUserId
       : 'joao',
@@ -233,6 +236,7 @@ export function loadState(): AppState {
       return {
         people: mergePeople(),
         events: buildSeedEvents(),
+    teamEvents: [],
         currentUserId: 'joao',
       }
     }
@@ -252,6 +256,7 @@ export function loadState(): AppState {
       ...recovered,
       people: mergePeople(recovered.people),
       events: ensureFixedDemoEvents(recovered.events),
+      teamEvents: Array.isArray(recovered.teamEvents) ? recovered.teamEvents : [],
     }
     saveState(recoveredState)
     return recoveredState
@@ -260,6 +265,7 @@ export function loadState(): AppState {
   const fresh: AppState = {
     people: mergePeople(),
     events: buildSeedEvents(),
+    teamEvents: [],
     currentUserId: 'joao',
   }
   saveState(fresh)
@@ -305,6 +311,7 @@ export function resetDemoState(): AppState {
   const state: AppState = {
     people: mergePeople(),
     events: buildSeedEvents(),
+    teamEvents: [],
     currentUserId: 'joao',
   }
   saveState(state)

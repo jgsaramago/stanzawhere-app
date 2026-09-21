@@ -9,7 +9,8 @@ import {
   startOfMonth,
   startOfWeek,
 } from 'date-fns'
-import type { Holiday, Person, ScheduleEvent } from '../types'
+import type {
+  TeamEvent, Holiday, Person, ScheduleEvent } from '../types'
 
 export function getWeekDays(anchor: Date): Date[] {
   const start = startOfWeek(anchor, { weekStartsOn: 1 })
@@ -174,6 +175,15 @@ const PLACE_PALETTE = [
   '#1D4ED8',
   '#A21CAF',
 ]
+
+
+export function teamEventsForDay(
+  teamEvents: TeamEvent[],
+  day: Date,
+): TeamEvent[] {
+  const key = toDateKey(day)
+  return teamEvents.filter((e) => e.startDate <= key && e.endDate >= key)
+}
 
 export function colorForPlace(
   place: string,

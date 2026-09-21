@@ -19,9 +19,10 @@ export function FlightImportModal({
   const editablePeople = people.filter((p) =>
     canEditPerson(currentUser.id, p.id),
   )
-  const [personId, setPersonId] = useState(
-    () => editablePeople[0]?.id ?? currentUser.id,
-  )
+  const [personId, setPersonId] = useState(() => {
+    if (editablePeople.some((p) => p.id === currentUser.id)) return currentUser.id
+    return editablePeople[0]?.id ?? currentUser.id
+  })
   const [dragging, setDragging] = useState(false)
   const [raw, setRaw] = useState('')
   const [parsed, setParsed] = useState<ParsedFlightEmail | null>(null)

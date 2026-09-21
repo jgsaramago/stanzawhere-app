@@ -10,6 +10,7 @@ import {
 } from 'date-fns'
 import {
   BookOpen,
+  Calendar,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -41,6 +42,7 @@ import {
   getWeekDays,
   holidaysForDay,
   placeForPersonDay,
+  teamEventsForDay,
   toDateKey,
   uid,
   weekLocationForPerson,
@@ -67,6 +69,7 @@ import type {
   FlightSegment,
   Person,
   ScheduleEvent,
+  TeamEvent,
 } from './types'
 import { DRESS_CODES } from './types'
 import './App.css'
@@ -132,9 +135,11 @@ function EventForm({
   const editablePeople = people.filter((p) =>
     canEditPerson(currentUser.id, p.id),
   )
-  const [personId, setPersonId] = useState(
-    () => editablePeople[0]?.id ?? currentUser.id,
-  )
+  const [personId, setPersonId] = useState(() => {
+    // Default to Acting as when that person is editable.
+    if (editablePeople.some((p) => p.id === currentUser.id)) return currentUser.id
+    return editablePeople[0]?.id ?? currentUser.id
+  })
   const [type, setType] = useState<EventType>('travel')
   const [title, setTitle] = useState('')
   const [startDate, setStartDate] = useState(toDateKey(new Date()))
@@ -306,6 +311,139 @@ function EventForm({
   )
 }
 
+
+function TeamEventForm({
+  initial,
+  currentUserId,
+  onClose,
+  onSubmit,
+  onDelete,
+}: {
+  initial?: TeamEvent | null
+  currentUserId: string
+  onClose: () => void
+  onSubmit: (event: TeamEvent) => void
+  onDelete?: (id: string) => void
+}) {
+  const [title, setTitle] = useState(initial?.title ?? '')
+  const [description, setDescription] = useState(initial?.description ?? '')
+  const [startDate, setStartDate] = useState(initial?.startDate ?? toDateKey(new Date()))
+  const [endDate, setEndDate] = useState(initial?.endDate ?? toDateKey(new Date()))
+  const [location, setLocation] = useState(initial?.location ?? '')
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!title.trim()) return
+    const now = new Date().toISOString()
+    onSubmit({
+      id: initial?.id ?? uid('team'),
+      title: title.trim(),
+      description: description.trim() || undefined,
+      startDate,
+      endDate: endDate < startDate ? startDate : endDate,
+      location: location.trim() || undefined,
+      createdBy: initial?.createdBy ?? currentUserId,
+      createdAt: initial?.createdAt ?? now,
+      updatedAt: now,
+    })
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <form
+        className="modal"
+        onClick={(ev) => ev.stopPropagation()}
+        onSubmit={handleSubmit}
+      >
+        <header className="modal-header">
+          <div>
+            <p className="eyebrow">Shared calendar</p>
+            <h2>{initial ? 'Edit event' : 'New event'}</h2>
+          </div>
+          <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">
+            <X size={18} />
+          </button>
+        </header>
+
+        <div className="form-grid">
+          <label className="span-2">
+            Title
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Team offsite, all-hands…"
+              required
+            />
+          </label>
+
+          <label className="span-2">
+            Description
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              placeholder="Optional details"
+            />
+          </label>
+
+          <label>
+            Start date
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              required
+            />
+          </label>
+
+          <label>
+            End date
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              required
+            />
+          </label>
+
+          <label className="span-2">
+            Location
+            <input
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="City, venue, or Remote"
+            />
+          </label>
+        </div>
+
+        <footer className="modal-footer between">
+          {initial && onDelete ? (
+            <button
+              type="button"
+              className="btn danger"
+              onClick={() => {
+                if (window.confirm(`Delete “${initial.title}”?`)) onDelete(initial.id)
+              }}
+            >
+              Delete
+            </button>
+          ) : (
+            <span />
+          )}
+          <div className="modal-footer-actions">
+            <button type="button" className="btn ghost" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="submit" className="btn primary">
+              {initial ? 'Save event' : 'Add event'}
+            </button>
+          </div>
+        </footer>
+      </form>
+    </div>
+  )
+}
+
 export default function App() {
   const [state, setState] = useState(() => loadState())
   const [past, setPast] = useState<ReturnType<typeof loadHistory>>(() => loadHistory())
@@ -314,6 +452,8 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('calendar')
   const [mode, setMode] = useState<CalendarMode>('week')
   const [showForm, setShowForm] = useState(false)
+  const [showTeamEventForm, setShowTeamEventForm] = useState(false)
+  const [editingTeamEvent, setEditingTeamEvent] = useState<TeamEvent | null>(null)
   const [showFlightImport, setShowFlightImport] = useState(false)
   const [showManual, setShowManual] = useState(false)
   const [profilePerson, setProfilePerson] = useState<Person | null>(null)
@@ -481,7 +621,30 @@ export default function App() {
     if (event.status === 'pending') setTab('approvals')
   }
 
-  function addEvents(events: ScheduleEvent[]) {
+  
+  function upsertTeamEvent(event: TeamEvent) {
+    const list = state.teamEvents ?? []
+    const idx = list.findIndex((e) => e.id === event.id)
+    const next =
+      idx === -1 ? [...list, event] : list.map((e) => (e.id === event.id ? event : e))
+    persist({ ...state, teamEvents: next })
+    setShowTeamEventForm(false)
+    setEditingTeamEvent(null)
+    showToast(idx === -1 ? `Added “${event.title}”` : `Updated “${event.title}”`)
+  }
+
+  function removeTeamEvent(id: string) {
+    persist({
+      ...state,
+      teamEvents: (state.teamEvents ?? []).filter((e) => e.id !== id),
+    })
+    setShowTeamEventForm(false)
+    setEditingTeamEvent(null)
+    setSelectedEvent(null)
+    showToast('Event deleted')
+  }
+
+function addEvents(events: ScheduleEvent[]) {
     if (events.length === 0) return
     const allowed = events.filter((e) =>
       canEditPerson(currentUser.id, e.personId),
@@ -833,6 +996,72 @@ export default function App() {
                       </div>
                     )
                   })}
+
+
+                  <div className="person-row event-row">
+                    <div className="person-cell cell event-row-label">
+                      <div className="event-row-title">
+                        <Calendar size={16} />
+                        <strong>Event</strong>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn ghost small"
+                        onClick={() => {
+                          setEditingTeamEvent(null)
+                          setShowTeamEventForm(true)
+                        }}
+                      >
+                        <Plus size={14} />
+                        Add
+                      </button>
+                    </div>
+                    {weekDays.map((day) => {
+                      const dayTeamEvents = teamEventsForDay(
+                        state.teamEvents ?? [],
+                        day,
+                      )
+                      return (
+                        <div
+                          key={`team-${day.toISOString()}`}
+                          className={`day-cell cell event-day-cell ${
+                            isToday(day) ? 'is-today' : ''
+                          } ${isWeekend(day) ? 'is-weekend' : ''}`}
+                        >
+                          <div className="event-stack">
+                            {dayTeamEvents.map((event) => (
+                              <button
+                                key={event.id}
+                                type="button"
+                                className="event-chip chip-team-event"
+                                title={[
+                                  event.title,
+                                  event.location,
+                                  event.description,
+                                ]
+                                  .filter(Boolean)
+                                  .join(' · ')}
+                                onClick={() => {
+                                  setEditingTeamEvent(event)
+                                  setShowTeamEventForm(true)
+                                }}
+                              >
+                                <Calendar size={12} />
+                                <span>
+                                  {isSameDay(
+                                    day,
+                                    new Date(`${event.startDate}T12:00:00`),
+                                  )
+                                    ? event.title
+                                    : event.location || event.title}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
 
                   {state.people.map((person) => {
                     const location = weekLocationForPerson(
@@ -1254,6 +1483,19 @@ export default function App() {
             </section>
           </div>
         </main>
+      )}
+
+      {showTeamEventForm && (
+        <TeamEventForm
+          initial={editingTeamEvent}
+          currentUserId={currentUser.id}
+          onClose={() => {
+            setShowTeamEventForm(false)
+            setEditingTeamEvent(null)
+          }}
+          onSubmit={upsertTeamEvent}
+          onDelete={removeTeamEvent}
+        />
       )}
 
       {showForm && (
