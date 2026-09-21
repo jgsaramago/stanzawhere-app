@@ -3,7 +3,6 @@ import { Mail, Plane, Upload, X } from 'lucide-react'
 import { parseFlightEmail, readDroppedFile } from '../lib/flightEmail'
 import { toDateKey, uid } from '../lib/dates'
 import { canEditPerson } from '../lib/permissions'
-import { approverForPerson } from '../data/seed'
 import type { ParsedFlightEmail, Person, ScheduleEvent } from '../types'
 
 export function FlightImportModal({
@@ -65,8 +64,7 @@ export function FlightImportModal({
       parsed.destinationCity ||
       parsed.flights[parsed.flights.length - 1]?.toCity ||
       'Destination'
-    const approverId = subject.approverId
-    const status = approverId ? 'pending' : 'approved'
+    const status = 'approved' as const
 
     const notes = [
       parsed.airline ? `Airline: ${parsed.airline}` : null,
@@ -88,8 +86,8 @@ export function FlightImportModal({
       notes,
       status,
       requestedBy: currentUser.id,
-      approverId,
-      reviewedBy: status === 'approved' ? currentUser.id : undefined,
+      approverId: null,
+      reviewedBy: currentUser.id,
       createdAt: now,
       updatedAt: now,
       flights: parsed.flights,
@@ -107,16 +105,14 @@ export function FlightImportModal({
       notes: 'Auto-set from flight import',
       status,
       requestedBy: currentUser.id,
-      approverId,
-      reviewedBy: status === 'approved' ? currentUser.id : undefined,
+      approverId: null,
+      reviewedBy: currentUser.id,
       createdAt: now,
       updatedAt: now,
     }
 
     onImport([travel, locationEvent])
   }
-
-  const approver = approverForPerson(subject)
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -197,9 +193,6 @@ export function FlightImportModal({
             </div>
             <p className="muted">
               {parsed.startDate} → {parsed.endDate}
-              {approver
-                ? ` · will go to ${approver.name} for approval`
-                : ' · auto-approved'}
             </p>
             <ul>
               {parsed.flights.map((f, i) => (

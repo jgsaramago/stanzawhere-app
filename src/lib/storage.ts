@@ -24,9 +24,14 @@ const LEGACY_KEYS = [
  * Ensure Heidelberg week demos exist in saved calendars.
  * Drops obsolete Dallas/Chicago/NYC demos and upserts by stable demo_* ids.
  */
+/** Prior this-week onsite seeds for Nick / Anirban / Vaidehi — clear so cells default to Remote. */
+const THIS_WEEK_REMOTE_CLEAR_IDS = new Set(['e3', 'e5', 'e8'])
+
 export function ensureFixedDemoEvents(events: ScheduleEvent[]): ScheduleEvent[] {
   const demos = buildFixedDemoEvents()
-  let next = events.filter((e) => !isObsoleteDemoEventId(e.id))
+  let next = events.filter(
+    (e) => !isObsoleteDemoEventId(e.id) && !THIS_WEEK_REMOTE_CLEAR_IDS.has(e.id),
+  )
   for (const demo of demos) {
     const idx = next.findIndex((e) => e.id === demo.id)
     if (idx === -1) next = [...next, demo]

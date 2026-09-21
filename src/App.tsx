@@ -30,7 +30,7 @@ import { DressCodeLegend, DressCodeMark } from './components/DressCodeMark'
 import { ProfileModal } from './components/ProfileModal'
 import { UserManualModal } from './components/UserManualModal'
 import type { ChatAction } from './data/manual'
-import { approverForPerson, COUNTRY_OPTIONS, COUNTRY_NAMES, HOLIDAYS, TIMEZONE_LANES } from './data/seed'
+import { COUNTRY_OPTIONS, COUNTRY_NAMES, HOLIDAYS, TIMEZONE_LANES } from './data/seed'
 import {
   addMonths,
   colorForPlace,
@@ -146,7 +146,6 @@ function EventForm({
   const [asDraft, setAsDraft] = useState(false)
 
   const subject = people.find((p) => p.id === personId) ?? currentUser
-  const approver = approverForPerson(subject)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -158,12 +157,8 @@ function EventForm({
           ? `Week in ${location || subject.homeCity}`
           : `Travel to ${location || 'destination'}`
 
-    const needsApproval = Boolean(subject.approverId)
-    const status: ApprovalStatus = asDraft
-      ? 'draft'
-      : needsApproval
-        ? 'pending'
-        : 'approved'
+    // Approvals paused for now — new requests are saved as approved (or draft).
+    const status: ApprovalStatus = asDraft ? 'draft' : 'approved'
 
     onSubmit({
       id: uid('evt'),
@@ -178,7 +173,7 @@ function EventForm({
       dressCode: dressCode || undefined,
       status,
       requestedBy: currentUser.id,
-      approverId: subject.approverId,
+      approverId: null,
       reviewedBy: status === 'approved' ? currentUser.id : undefined,
       createdAt: now,
       updatedAt: now,
@@ -284,15 +279,9 @@ function EventForm({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              placeholder="Context for approvers"
+              placeholder="Optional notes"
             />
           </label>
-
-          <p className="approver-hint span-2">
-            {approver
-              ? `Approver: ${approver.name} (${approver.title})`
-              : 'No approval needed (CEO — auto-approved on submit)'}
-          </p>
 
           <label className="checkbox span-2">
             <input
@@ -300,7 +289,7 @@ function EventForm({
               checked={asDraft}
               onChange={(e) => setAsDraft(e.target.checked)}
             />
-            Save as draft (do not submit for approval yet)
+            Save as draft
           </label>
         </div>
 
@@ -309,11 +298,7 @@ function EventForm({
             Cancel
           </button>
           <button type="submit" className="btn primary">
-            {asDraft
-              ? 'Save draft'
-              : approver
-                ? 'Submit for approval'
-                : 'Save (auto-approved)'}
+            {asDraft ? 'Save draft' : 'Save request'}
           </button>
         </footer>
       </form>
@@ -573,13 +558,11 @@ export default function App() {
       denyEdit('submit requests')
       return
     }
-    const person = state.people.find((p) => p.id === event.personId)
-    const approverId = person?.approverId ?? null
     const updated: ScheduleEvent = {
       ...event,
-      status: approverId ? 'pending' : 'approved',
-      approverId,
-      reviewedBy: approverId ? undefined : currentUser.id,
+      status: 'approved',
+      approverId: null,
+      reviewedBy: currentUser.id,
       updatedAt: new Date().toISOString(),
     }
     persist({ ...state, events: upsertEvent(state.events, updated) })

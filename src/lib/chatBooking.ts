@@ -750,8 +750,7 @@ export function buildBookingEvents(
           ? `Week in ${location || subject.homeCity}`
           : `Travel to ${location || 'destination'}`
 
-    const needsApproval = Boolean(subject.approverId)
-    const status: ApprovalStatus = needsApproval ? 'pending' : 'approved'
+    const status: ApprovalStatus = 'approved'
 
     return {
       id: uid('evt'),
@@ -765,8 +764,8 @@ export function buildBookingEvents(
       notes: 'Created via StanBot',
       status,
       requestedBy: currentUser.id,
-      approverId: subject.approverId,
-      reviewedBy: status === 'approved' ? currentUser.id : undefined,
+      approverId: null,
+      reviewedBy: currentUser.id,
       createdAt: now,
       updatedAt: now,
     }
