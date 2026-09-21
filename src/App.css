@@ -491,6 +491,31 @@ h4 {
 .event-chip.chip-location {
   background: var(--teal-soft);
   color: var(--teal);
+  align-items: flex-start;
+  text-align: left;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 8px;
+  line-height: 1.2;
+}
+
+.location-chip-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.location-chip-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: inherit;
+}
+
+.location-chip-place {
+  font-size: 0.68rem;
+  font-weight: 500;
+  opacity: 0.9;
 }
 
 .chip-remote,

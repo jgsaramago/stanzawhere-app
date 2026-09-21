@@ -1281,21 +1281,35 @@ function addEvents(events: ScheduleEvent[]) {
                                       >
                                         {dress && <DressCodeMark id={dress.id} />}
                                         <Icon size={12} />
-                                        <span>
-                                          {event.type === 'pto'
-                                            ? event.title
-                                            : event.type === 'location'
-                                              ? event.hotel
-                                                ? event.hotel.startsWith('Hotel')
-                                                  ? event.hotel
-                                                  : `Hotel: ${event.hotel}`
-                                                : event.title ||
-                                                  event.location ||
-                                                  meta.label
-                                              : isStart
-                                                ? event.title
-                                                : event.location || meta.label}
-                                        </span>
+                                        {event.type === 'location' &&
+                                        !event.hotel &&
+                                        event.title &&
+                                        event.location ? (
+                                          <span className="location-chip-text">
+                                            <strong className="location-chip-title">
+                                              {event.title}
+                                            </strong>
+                                            <span className="location-chip-place">
+                                              {event.location}
+                                            </span>
+                                          </span>
+                                        ) : (
+                                          <span>
+                                            {event.type === 'pto'
+                                              ? event.title
+                                              : event.type === 'location'
+                                                ? event.hotel
+                                                  ? event.hotel.startsWith('Hotel')
+                                                    ? event.hotel
+                                                    : `Hotel: ${event.hotel}`
+                                                  : event.title ||
+                                                    event.location ||
+                                                    meta.label
+                                                : isStart
+                                                  ? event.title
+                                                  : event.location || meta.label}
+                                          </span>
+                                        )}
                                       </button>
                                       {dayFlights.map((f) => (
                                         <div

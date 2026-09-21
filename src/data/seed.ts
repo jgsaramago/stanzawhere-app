@@ -515,7 +515,7 @@ export function buildFixedDemoEvents(now = new Date()): ScheduleEvent[] {
       id: `demo_juxtapose_nyc_${personId}`,
       personId,
       type: 'location',
-      title: 'New York',
+      title: 'Juxtapose meeting',
       startDate: '2026-09-21',
       endDate: '2026-09-24',
       location: 'New York',
