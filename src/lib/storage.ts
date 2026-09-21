@@ -25,7 +25,7 @@ const LEGACY_KEYS = [
  * Drops obsolete Dallas/Chicago/NYC demos and upserts by stable demo_* ids.
  */
 /** Prior this-week onsite seeds for Nick / Anirban / Vaidehi — clear so cells default to Remote. */
-const THIS_WEEK_REMOTE_CLEAR_IDS = new Set(['e3', 'e5', 'e8'])
+const THIS_WEEK_REMOTE_CLEAR_IDS = new Set(['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7', 'e8'])
 
 export function ensureFixedDemoEvents(events: ScheduleEvent[]): ScheduleEvent[] {
   const demos = buildFixedDemoEvents()

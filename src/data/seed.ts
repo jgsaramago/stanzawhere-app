@@ -321,11 +321,6 @@ export const HOLIDAYS: Holiday[] = [
   { date: '2027-01-01', name: 'Ano Novo', countryCode: 'PT' },
 ]
 
-function isoDaysFrom(base: Date, offset: number): string {
-  const d = new Date(base)
-  d.setDate(d.getDate() + offset)
-  return d.toISOString().slice(0, 10)
-}
 
 const OBSOLETE_DEMO_ID_PREFIXES = [
   'demo_dallas_',
@@ -501,6 +496,31 @@ export function buildFixedDemoEvents(now = new Date()): ScheduleEvent[] {
     })
   }
 
+
+  // Leah maternity leave (upserted for existing localStorage)
+  {
+    const person = PEOPLE.find((p) => p.id === 'leah')
+    if (person) {
+      events.push({
+        id: 'demo_leah_maternity',
+        personId: 'leah',
+        type: 'pto',
+        title: 'Maternity leave',
+        startDate: '2026-09-01',
+        endDate: '2026-10-15',
+        location: person.homeCity ?? 'Chicago',
+        countryCode: person.homeCountry ?? 'US',
+        notes: 'Maternity leave 1 Sep – 15 Oct 2026',
+        status: 'approved',
+        requestedBy: 'leah',
+        approverId: null,
+        reviewedBy: 'leah',
+        createdAt: ts,
+        updatedAt: ts,
+      })
+    }
+  }
+
   return events
 }
 
@@ -510,94 +530,7 @@ export function fixedDemoEventIds(): string[] {
 }
 
 export function buildSeedEvents(now = new Date()): ScheduleEvent[] {
-  const mondayOffset = (now.getDay() + 6) % 7
-  const weekStart = new Date(now)
-  weekStart.setHours(12, 0, 0, 0)
-  weekStart.setDate(now.getDate() - mondayOffset)
-  const ts = now.toISOString()
-
-  return [
-    {
-      id: 'e1',
-      personId: 'joao',
-      type: 'travel',
-      title: 'SF leadership week',
-      startDate: isoDaysFrom(weekStart, 1),
-      endDate: isoDaysFrom(weekStart, 3),
-      location: 'San Francisco',
-      countryCode: 'US',
-      notes: 'Onsite with Nick & Darwin',
-      status: 'approved',
-      requestedBy: 'joao',
-      approverId: 'darwin',
-      reviewedBy: 'darwin',
-      createdAt: ts,
-      updatedAt: ts,
-    },
-    {
-      id: 'e2',
-      personId: 'leah',
-      type: 'pto',
-      title: 'Annual leave',
-      startDate: isoDaysFrom(weekStart, 3),
-      endDate: isoDaysFrom(weekStart, 4),
-      location: 'Chicago',
-      countryCode: 'US',
-      status: 'approved',
-      requestedBy: 'leah',
-      approverId: 'charlie',
-      reviewedBy: 'charlie',
-      createdAt: ts,
-      updatedAt: ts,
-    },
-    {
-      id: 'e4',
-      personId: 'greg',
-      type: 'travel',
-      title: 'Lisbon visit',
-      startDate: isoDaysFrom(weekStart, 2),
-      endDate: isoDaysFrom(weekStart, 5),
-      location: 'Lisbon',
-      countryCode: 'PT',
-      notes: 'Delivery ops sync',
-      status: 'pending',
-      requestedBy: 'greg',
-      approverId: 'charlie',
-      createdAt: ts,
-      updatedAt: ts,
-    },
-    {
-      id: 'e6',
-      personId: 'darwin',
-      type: 'travel',
-      title: 'SF board week',
-      startDate: isoDaysFrom(weekStart, 0),
-      endDate: isoDaysFrom(weekStart, 2),
-      location: 'San Francisco',
-      countryCode: 'US',
-      status: 'pending',
-      requestedBy: 'darwin',
-      approverId: 'nick',
-      createdAt: ts,
-      updatedAt: ts,
-    },
-    {
-      id: 'e7',
-      personId: 'jonathan',
-      type: 'pto',
-      title: 'PTO',
-      startDate: isoDaysFrom(weekStart, 4),
-      endDate: isoDaysFrom(weekStart, 4),
-      location: 'San Francisco',
-      countryCode: 'US',
-      status: 'pending',
-      requestedBy: 'jonathan',
-      approverId: 'charlie',
-      createdAt: ts,
-      updatedAt: ts,
-    },
-    ...buildFixedDemoEvents(now),
-  ]
+  return [...buildFixedDemoEvents(now)]
 }
 
 export { COUNTRY_NAMES, COUNTRY_OPTIONS } from './countries'
