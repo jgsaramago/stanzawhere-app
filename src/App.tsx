@@ -618,7 +618,7 @@ export default function App() {
     const base = stateRef.current
     persist({ ...base, events: upsertEvent(base.events, event) })
     setShowForm(false)
-    if (event.status === 'pending') setTab('approvals')
+    /* approvals tab removed */
   }
 
   
@@ -663,7 +663,7 @@ function addEvents(events: ScheduleEvent[]) {
     for (const event of allowed) next = upsertEvent(next, event)
     persist({ ...base, events: next })
     setShowForm(false)
-    if (allowed.some((e) => e.status === 'pending')) setTab('approvals')
+    /* approvals tab removed */
   }
 
   function importEvents(events: ScheduleEvent[]) {
@@ -679,7 +679,7 @@ function addEvents(events: ScheduleEvent[]) {
     for (const event of allowed) next = upsertEvent(next, event)
     persist({ ...base, events: next })
     setShowFlightImport(false)
-    if (allowed.some((e) => e.status === 'pending')) setTab('approvals')
+    /* approvals tab removed */
     showToast('Flight imported — Cmd+Z to undo')
   }
 
@@ -770,7 +770,7 @@ function addEvents(events: ScheduleEvent[]) {
         setMode('month')
         break
       case 'approvals':
-        setTab('approvals')
+        setTab('calendar')
         break
       case 'undo':
         undo()
@@ -804,13 +804,6 @@ function addEvents(events: ScheduleEvent[]) {
             onClick={() => setTab('calendar')}
           >
             Calendar
-          </button>
-          <button
-            className={tab === 'approvals' ? 'active' : ''}
-            onClick={() => setTab('approvals')}
-          >
-            Approvals
-            {myQueue.length > 0 && <span className="count">{myQueue.length}</span>}
           </button>
         </nav>
 
@@ -996,72 +989,86 @@ function addEvents(events: ScheduleEvent[]) {
                       </div>
                     )
                   })}
-
-
-                  <div className="person-row event-row">
-                    <div className="person-cell cell event-row-label">
-                      <div className="event-row-title">
-                        <Calendar size={16} />
+                  {/* Shared Event row — direct grid cells (not display:contents) */}
+                  <div className="cell event-row-label">
+                    <div className="event-row-title">
+                      <Calendar size={16} />
+                      <div>
                         <strong>Event</strong>
+                        <span className="event-row-sub">Team-wide</span>
                       </div>
-                      <button
-                        type="button"
-                        className="btn ghost small"
-                        onClick={() => {
-                          setEditingTeamEvent(null)
-                          setShowTeamEventForm(true)
-                        }}
-                      >
-                        <Plus size={14} />
-                        Add
-                      </button>
                     </div>
-                    {weekDays.map((day) => {
-                      const dayTeamEvents = teamEventsForDay(
-                        state.teamEvents ?? [],
-                        day,
-                      )
-                      return (
-                        <div
-                          key={`team-${day.toISOString()}`}
-                          className={`day-cell cell event-day-cell ${
-                            isToday(day) ? 'is-today' : ''
-                          } ${isWeekend(day) ? 'is-weekend' : ''}`}
-                        >
-                          <div className="event-stack">
-                            {dayTeamEvents.map((event) => (
-                              <button
-                                key={event.id}
-                                type="button"
-                                className="event-chip chip-team-event"
-                                title={[
-                                  event.title,
-                                  event.location,
-                                  event.description,
-                                ]
-                                  .filter(Boolean)
-                                  .join(' · ')}
-                                onClick={() => {
-                                  setEditingTeamEvent(event)
-                                  setShowTeamEventForm(true)
-                                }}
-                              >
-                                <Calendar size={12} />
-                                <span>
-                                  {isSameDay(
-                                    day,
-                                    new Date(`${event.startDate}T12:00:00`),
-                                  )
-                                    ? event.title
-                                    : event.location || event.title}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )
-                    })}
+                    <button
+                      type="button"
+                      className="btn ghost small"
+                      onClick={() => {
+                        setEditingTeamEvent(null)
+                        setShowTeamEventForm(true)
+                      }}
+                    >
+                      <Plus size={14} />
+                      Add
+                    </button>
                   </div>
+                  {weekDays.map((day) => {
+                    const dayTeamEvents = teamEventsForDay(
+                      state.teamEvents ?? [],
+                      day,
+                    )
+                    return (
+                      <div
+                        key={`team-${day.toISOString()}`}
+                        className={`cell event-day-cell ${
+                          isToday(day) ? 'is-today' : ''
+                        } ${isWeekend(day) ? 'is-weekend' : ''}`}
+                      >
+                        <div className="event-stack">
+                          {dayTeamEvents.map((event) => (
+                            <button
+                              key={event.id}
+                              type="button"
+                              className="event-chip chip-team-event"
+                              title={[
+                                event.title,
+                                event.location,
+                                event.description,
+                              ]
+                                .filter(Boolean)
+                                .join(' · ')}
+                              onClick={() => {
+                                setEditingTeamEvent(event)
+                                setShowTeamEventForm(true)
+                              }}
+                            >
+                              <Calendar size={12} />
+                              <span>
+                                {isSameDay(
+                                  day,
+                                  new Date(`${event.startDate}T12:00:00`),
+                                )
+                                  ? event.title
+                                  : event.location || event.title}
+                              </span>
+                            </button>
+                          ))}
+                          {dayTeamEvents.length === 0 && !isWeekend(day) && (
+                            <button
+                              type="button"
+                              className="event-chip chip-team-event-empty"
+                              onClick={() => {
+                                setEditingTeamEvent(null)
+                                setShowTeamEventForm(true)
+                              }}
+                            >
+                              + Event
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+
+
 
                   {state.people.map((person) => {
                     const location = weekLocationForPerson(
@@ -1360,7 +1367,7 @@ function addEvents(events: ScheduleEvent[]) {
         </main>
       )}
 
-      {tab === 'approvals' && (
+      {false && tab === 'approvals' && (
         <main className="approvals-view">
           <div className="approvals-header">
             <div>

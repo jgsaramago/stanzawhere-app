@@ -1703,42 +1703,6 @@ h4 {
 }
 
 
-/* Shared Event row above people */
-.event-row {
-  background: #f4f7fb;
-  border-bottom: 1px solid #dbe3ee;
-}
-
-.event-row-label,
-.event-row .person-cell {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 10px 12px;
-}
-
-.event-row-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #334155;
-}
-
-.event-row-title strong {
-  font-size: 0.92rem;
-}
-
-.event-day-cell {
-  min-height: 52px;
-}
-
-.event-chip.chip-team-event,
-.chip-team-event {
-  background: #ede9fe;
-  color: #5b21b6;
-  border: 1px solid #ddd6fe;
-}
 
 .btn.small {
   padding: 4px 8px;
@@ -1753,4 +1717,76 @@ h4 {
 .modal-footer-actions {
   display: flex;
   gap: 8px;
+}
+
+
+/* Shared Event row — direct grid cells, highly visible */
+.event-row-label {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 64px;
+  padding: 10px 12px;
+  background: #f3e8ff;
+  border-bottom: 2px solid #c4b5fd;
+}
+
+.event-row-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #5b21b6;
+}
+
+.event-row-title strong {
+  display: block;
+  font-size: 0.95rem;
+  line-height: 1.15;
+}
+
+.event-row-sub {
+  display: block;
+  font-size: 0.7rem;
+  color: #7c3aed;
+  font-weight: 500;
+}
+
+.event-day-cell {
+  min-height: 64px;
+  background: #faf5ff;
+  border-bottom: 2px solid #c4b5fd;
+}
+
+.event-day-cell.is-today {
+  background: #f3e8ff;
+}
+
+.event-chip.chip-team-event,
+.chip-team-event {
+  background: #7c3aed;
+  color: #fff;
+  border: 1px solid #6d28d9;
+  font-weight: 600;
+}
+
+.chip-team-event-empty {
+  background: transparent;
+  color: #7c3aed;
+  border: 1px dashed #c4b5fd;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.chip-team-event-empty:hover {
+  background: #ede9fe;
+}
+
+.btn.small {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  gap: 4px;
 }
