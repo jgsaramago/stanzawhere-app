@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   addWeeks,
   format,
-  isSameDay,
   isSameMonth,
   isToday,
   isWeekend,
@@ -10,6 +9,7 @@ import {
 } from 'date-fns'
 import {
   BookOpen,
+  Building2,
   Calendar,
   Check,
   ChevronLeft,
@@ -1238,10 +1238,6 @@ function addEvents(events: ScheduleEvent[]) {
                                   const Icon = meta.icon
                                   const dayKey = toDateKey(day)
                                   const dayFlights = flightsForDay(event, dayKey)
-                                  const isStart = isSameDay(
-                                    day,
-                                    new Date(`${event.startDate}T12:00:00`),
-                                  )
                                   const dress =
                                     (event.type === 'travel' ||
                                       event.type === 'location') &&
@@ -1283,10 +1279,19 @@ function addEvents(events: ScheduleEvent[]) {
                                       >
                                         {dress && <DressCodeMark id={dress.id} />}
                                         <Icon size={12} />
-                                        {event.type === 'location' &&
-                                        !event.hotel &&
-                                        event.title &&
-                                        event.location ? (
+                                        {event.type === 'travel' && event.location ? (
+                                          <span className="location-chip-text">
+                                            <strong className="location-chip-title">
+                                              {event.title}
+                                            </strong>
+                                            <span className="location-chip-place">
+                                              {event.location}
+                                            </span>
+                                          </span>
+                                        ) : event.type === 'location' &&
+                                          !event.hotel &&
+                                          event.title &&
+                                          event.location ? (
                                           <span className="location-chip-text">
                                             <strong className="location-chip-title">
                                               {event.title}
@@ -1307,9 +1312,7 @@ function addEvents(events: ScheduleEvent[]) {
                                                   : event.title ||
                                                     event.location ||
                                                     meta.label
-                                                : isStart
-                                                  ? event.title
-                                                  : event.location || meta.label}
+                                                : event.title}
                                           </span>
                                         )}
                                       </button>
@@ -1337,6 +1340,26 @@ function addEvents(events: ScheduleEvent[]) {
                                           </span>
                                         </div>
                                       ))}
+                                      {event.type === 'travel' && event.hotel && (
+                                        <div
+                                          className="hotel-detail"
+                                          title={`${event.hotel}${event.location ? ` · ${event.location}` : ''}`}
+                                        >
+                                          <Building2 size={11} />
+                                          <span className="hotel-detail-text">
+                                            <strong className="hotel-detail-name">
+                                              {event.hotel.startsWith('Hotel')
+                                                ? event.hotel
+                                                : event.hotel}
+                                            </strong>
+                                            {event.location && (
+                                              <span className="hotel-detail-place">
+                                                {event.location}
+                                              </span>
+                                            )}
+                                          </span>
+                                        </div>
+                                      )}
                                     </div>
                                   )
                                   })

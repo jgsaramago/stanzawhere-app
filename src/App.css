@@ -479,6 +479,12 @@ h4 {
 .event-chip.chip-travel {
   background: var(--sky-soft);
   color: var(--sky);
+  align-items: flex-start;
+  text-align: left;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 8px;
+  line-height: 1.2;
 }
 
 .chip-pto,
@@ -1218,6 +1224,38 @@ h4 {
   background: rgba(3, 105, 161, 0.08);
   border-radius: 8px;
   padding: 3px 6px;
+}
+
+.hotel-detail {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #0f766e;
+  background: rgba(15, 118, 110, 0.1);
+  border-radius: 8px;
+  padding: 4px 6px;
+  line-height: 1.2;
+}
+
+.hotel-detail-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.hotel-detail-name {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: inherit;
+}
+
+.hotel-detail-place {
+  font-size: 0.62rem;
+  font-weight: 500;
+  opacity: 0.9;
 }
 
 .toast {

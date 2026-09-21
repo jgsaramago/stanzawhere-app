@@ -447,7 +447,7 @@ export function buildFixedDemoEvents(now = new Date()): ScheduleEvent[] {
       title: 'SAP Stanza workshop',
       startDate: trip.arriveDate,
       endDate: trip.departDate,
-      location: 'Heidelberg, Germany',
+      location: 'Walldorf, Germany',
       countryCode: 'DE',
       hotel: trip.hotel,
       notes: `${hotelNote}. Arrive FRA ${trip.arriveTime} from ${trip.fromCode}; depart FRA ${trip.departTime} to ${trip.toCode}.`,
