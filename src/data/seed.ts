@@ -161,7 +161,7 @@ export const PEOPLE: Person[] = [
     name: 'Matt Mahowald',
     email: 'matt_mahowald@stanza.ai',
     role: 'member',
-    title: 'Product',
+    title: 'Tech Lead - Acting CTO',
     homeCity: 'San Francisco',
     homeCountry: 'US',
     timezone: 'America/Los_Angeles',

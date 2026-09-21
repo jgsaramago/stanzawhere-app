@@ -98,6 +98,7 @@ const SUPERSEDED_TITLES: Record<string, string[]> = {
   boby: ['Product'],
   hani: ['Team'],
   somrat: ['Team'],
+  matt: ['Product'],
 }
 
 function pickTitle(seed: Person, prev: Person): string {
