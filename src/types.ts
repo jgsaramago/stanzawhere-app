@@ -136,6 +136,8 @@ export interface TeamEvent {
   countryCode?: string
   /** @deprecated prefer city + countryCode */
   location?: string
+  /** Optional attire expectation for the shared event */
+  dressCode?: DressCode
   createdBy: string
   createdAt: string
   updatedAt: string

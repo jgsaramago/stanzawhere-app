@@ -129,21 +129,25 @@ export function placeForPersonDay(
   day: Date,
 ): {
   place: string
-  kind: 'pto' | 'travel' | 'location' | 'home' | 'remote'
+  kind: 'pto' | 'travel' | 'location' | 'home' | 'remote' | 'empty'
   pending: boolean
 } {
   const dayEvents = eventsForPersonDay(events, person.id, day, [
     'approved',
     'pending',
   ])
+  const weekend = isWeekend(day)
+
+  // Match week view: no PTO chips on weekends
   const pto = dayEvents.find((e) => e.type === 'pto')
-  if (pto && !isWeekend(day)) {
+  if (pto && !weekend) {
     return {
       place: pto.title?.trim() || 'PTO',
       kind: 'pto',
       pending: pto.status === 'pending',
     }
   }
+
   const travel = dayEvents.find((e) => e.type === 'travel')
   if (travel) {
     return {
@@ -152,15 +156,28 @@ export function placeForPersonDay(
       pending: travel.status === 'pending',
     }
   }
+
   const loc = dayEvents.find((e) => e.type === 'location')
   if (loc) {
+    // Prefer hotel label when set (same signal as week view hotel chip)
+    const hotelPlace = loc.hotel
+      ? loc.hotel.startsWith('Hotel')
+        ? loc.hotel
+        : `Hotel: ${loc.hotel}`
+      : loc.title?.startsWith('Hotel')
+        ? loc.title
+        : undefined
     return {
-      place: loc.location || loc.title || person.homeCity,
+      place: hotelPlace || loc.location || loc.title || person.homeCity,
       kind: 'location',
       pending: loc.status === 'pending',
     }
   }
-  // No travel / location / PTO logged → default to remote
+
+  // Match week view: Remote only on weekdays; weekends stay empty
+  if (weekend) {
+    return { place: '', kind: 'empty', pending: false }
+  }
   return { place: 'Remote', kind: 'remote', pending: false }
 }
 
@@ -188,8 +205,9 @@ export function teamEventsForDay(
 
 export function colorForPlace(
   place: string,
-  kind: 'pto' | 'travel' | 'location' | 'home' | 'remote',
+  kind: 'pto' | 'travel' | 'location' | 'home' | 'remote' | 'empty',
 ): string {
+  if (kind === 'empty' || !place.trim()) return 'transparent'
   if (kind === 'pto') return '#94A3B8'
   if (kind === 'remote' || place.trim().toLowerCase() === 'remote') return '#CBD5E1'
   const key = place.trim().toLowerCase()

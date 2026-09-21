@@ -198,39 +198,84 @@ h4 {
   min-width: 780px;
 }
 
+.month-color-grid > .cell,
+.month-color-grid .cell {
+  padding: 0;
+}
+
 .month-week-section,
 .person-row {
   display: contents;
 }
 
 .month-corner,
-.month-dow,
+.month-dow {
+  background: #f4f8fa;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  min-height: 20px;
+  padding: 2px 6px;
+  display: flex;
+  align-items: center;
+}
+
 .month-week-banner,
 .month-day-num {
   background: #f4f8fa;
-  font-size: 0.78rem;
   font-weight: 700;
   color: var(--ink-soft);
 }
 
 .month-week-banner {
-  font-weight: 700;
+  min-height: 20px;
+  padding: 2px 6px;
+  font-size: 0.68rem;
+  display: flex;
+  align-items: center;
 }
 
-.month-person {
-  min-height: 44px;
-  padding: 6px 8px;
+.month-day-num {
+  min-height: 16px;
+  padding: 0 4px;
+  font-size: 0.62rem;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.month-color-grid .person-cell.month-person {
+  min-height: 18px;
+  height: 18px;
+  padding: 0 6px;
+  gap: 5px;
+  align-items: center;
+}
+
+.month-color-grid .person-profile-btn {
+  padding: 0 6px;
 }
 
 .month-person .avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  font-size: 0.45rem;
+}
+
+.month-person .person-meta strong {
   font-size: 0.65rem;
+  line-height: 1;
+}
+
+.month-person .person-meta span {
+  display: none;
 }
 
 .month-swatch {
-  min-height: 44px;
+  min-height: 18px;
+  height: 18px;
   border: 0;
   padding: 0;
   width: 100%;
@@ -473,12 +518,13 @@ h4 {
   border: 1px dashed #fdba74;
 }
 
+/* Dress code legend + chip badges */
 .dress-code-strip {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
+  gap: 8px 10px;
+  padding: 10px 14px;
   margin: 0 0 10px;
   border-radius: 12px;
   background: #f8fafc;
@@ -487,20 +533,43 @@ h4 {
   color: #475569;
 }
 
-.dress-code-strip strong {
-  margin-right: 4px;
+.dress-code-strip > strong {
+  margin-right: 2px;
   color: #0f172a;
+  font-size: 0.8rem;
+  white-space: nowrap;
 }
 
 .dress-legend-item {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 8px 3px 6px;
+  gap: 6px;
+  padding: 4px 10px 4px 6px;
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 600;
-  border: 1px solid transparent;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #334155;
+  cursor: help;
+  line-height: 1.2;
+  width: auto;
+  height: auto;
+  max-width: none;
+  box-shadow: none;
+}
+
+.dress-legend-item .dress-legend-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
 }
 
 .dress-legend-label {
@@ -511,53 +580,127 @@ h4 {
   position: relative;
 }
 
-.event-block.has-dress-mark {
-  padding-top: 8px;
+.event-chip {
+  position: relative;
 }
 
 .dress-mark {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translate(-50%, -10%);
-  z-index: 2;
+  position: relative;
+  z-index: 3;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
   border-radius: 50%;
-  border: 1.5px solid #fff;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
-  pointer-events: none;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.2);
+  cursor: help;
+  pointer-events: auto;
 }
 
-.dress-formal {
+.event-chip .dress-mark {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+}
+
+.event-chip.has-dress-mark {
+  padding-right: 22px;
+}
+
+.dress-mark-popup {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%) translateY(4px);
+  min-width: 160px;
+  max-width: 220px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #f8fafc;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.28);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.12s ease, transform 0.12s ease, visibility 0.12s;
+  z-index: 30;
+  text-align: left;
+  line-height: 1.25;
+  white-space: normal;
+}
+
+.dress-mark-popup::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #0f172a;
+}
+
+.dress-mark-popup strong {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-bottom: 2px;
+  color: #f8fafc;
+}
+
+.dress-mark-popup em {
+  display: block;
+  font-size: 0.7rem;
+  font-style: normal;
+  font-weight: 500;
+  opacity: 0.88;
+  color: #e2e8f0;
+}
+
+.dress-mark:hover .dress-mark-popup,
+.dress-mark:focus .dress-mark-popup,
+.dress-mark:focus-within .dress-mark-popup,
+.dress-legend-item:hover .dress-mark-popup,
+.dress-legend-item:focus-within .dress-mark-popup {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.dress-legend-item.dress-formal .dress-legend-icon,
+.dress-mark.dress-formal {
   background: #111827;
   color: #f9fafb;
 }
 
-.dress-business {
+.dress-legend-item.dress-business .dress-legend-icon,
+.dress-mark.dress-business {
   background: #1e3a5f;
   color: #e0f2fe;
 }
 
-.dress-smart-business {
+.dress-legend-item.dress-smart-business .dress-legend-icon,
+.dress-mark.dress-smart-business {
   background: #334155;
   color: #f1f5f9;
 }
 
-.dress-business-casual {
+.dress-legend-item.dress-business-casual .dress-legend-icon,
+.dress-mark.dress-business-casual {
   background: #dbeafe;
   color: #1d4ed8;
 }
 
-.dress-casual {
+.dress-legend-item.dress-casual .dress-legend-icon,
+.dress-mark.dress-casual {
   background: #fce7f3;
   color: #be185d;
 }
 
-.dress-sporty {
+.dress-legend-item.dress-sporty .dress-legend-icon,
+.dress-mark.dress-sporty {
   background: #dcfce7;
   color: #15803d;
 }
@@ -1293,6 +1436,15 @@ h4 {
   animation: tagline-in 0.7s ease 0.55s both;
 }
 
+.intro-skip {
+  margin-top: 4px;
+  color: rgba(213, 239, 233, 0.55);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  animation: tagline-in 0.6s ease 1.1s both;
+}
+
 .auth-form {
   width: 100%;
   display: grid;
@@ -1825,3 +1977,207 @@ h4 {
   font-weight: 500;
   opacity: 0.9;
 }
+
+.team-event-dress {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 600;
+  opacity: 0.85;
+  margin-top: 1px;
+}
+
+.chip-team-event.has-dress-mark {
+  position: relative;
+  padding-top: 10px;
+}
+
+
+.month-swatch.empty-swatch {
+  background: transparent;
+}
+
+.month-swatch.remote-swatch {
+  /* keep remote gray from inline color */
+}
+
+.month-event-swatch {
+  display: flex;
+  align-items: center;
+  min-height: 16px;
+  height: 16px;
+  padding: 0 1px;
+  background: #faf5ff;
+  border-bottom: 1px solid #c4b5fd;
+}
+
+.month-event-swatch.has-team-event {
+  background: #ede9fe;
+}
+
+.month-event-swatch:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.month-event-add-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  color: #7c3aed;
+  font-size: 0.65rem;
+  font-weight: 700;
+  opacity: 0.45;
+  line-height: 1;
+}
+
+.month-event-swatch.month-event-add:hover .month-event-add-label {
+  opacity: 1;
+}
+
+.month-event-mini {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: #7c3aed;
+  color: #fff;
+  text-align: left;
+  line-height: 1;
+}
+
+.month-event-mini strong {
+  font-size: 0.55rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.month-event-mini em {
+  display: none;
+}
+
+.month-event-row .event-row-label {
+  min-height: 16px;
+  height: 16px;
+  padding: 0 6px;
+  border-bottom: 1px solid #c4b5fd;
+}
+
+.month-event-row .event-row-title {
+  gap: 4px;
+}
+
+.month-event-row .event-row-title strong {
+  font-size: 0.7rem;
+}
+
+.month-event-row .event-row-sub {
+  display: none;
+}
+
+.month-event-row .event-row-title svg {
+  width: 11px;
+  height: 11px;
+}
+
+/* Month compact rows — force over week-view person-cell heights */
+.month-color-grid .cell {
+  padding: 0 !important;
+}
+
+.month-color-grid .month-person.person-cell,
+.month-color-grid .month-person.person-profile-btn,
+.month-color-grid button.month-person {
+  min-height: 16px !important;
+  height: 16px !important;
+  max-height: 16px !important;
+  padding: 0 6px !important;
+  gap: 4px !important;
+  align-items: center !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.month-color-grid .month-person .avatar,
+.month-color-grid .month-person img.avatar {
+  width: 12px !important;
+  height: 12px !important;
+  min-width: 12px !important;
+  min-height: 12px !important;
+  max-width: 12px !important;
+  max-height: 12px !important;
+  border-radius: 2px !important;
+  font-size: 0.4rem !important;
+  flex-shrink: 0 !important;
+  line-height: 12px !important;
+}
+
+.month-color-grid .month-person .person-meta {
+  display: flex !important;
+  align-items: center !important;
+  min-width: 0;
+  line-height: 1 !important;
+}
+
+.month-color-grid .month-person .person-meta strong {
+  font-size: 0.62rem !important;
+  line-height: 1 !important;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.month-color-grid .month-person .person-meta span {
+  display: none !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+.month-color-grid .month-swatch {
+  min-height: 16px !important;
+  height: 16px !important;
+  max-height: 16px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.month-color-grid .month-event-swatch,
+.month-color-grid .month-event-row .event-row-label,
+.month-color-grid .event-row-label {
+  min-height: 14px !important;
+  height: 14px !important;
+  max-height: 14px !important;
+  padding: 0 4px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.month-color-grid .month-week-banner,
+.month-color-grid .month-corner,
+.month-color-grid .month-dow {
+  min-height: 16px !important;
+  height: 16px !important;
+  max-height: 16px !important;
+  padding: 0 6px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.month-color-grid .month-day-num {
+  min-height: 14px !important;
+  height: 14px !important;
+  max-height: 14px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+

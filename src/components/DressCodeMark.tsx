@@ -132,6 +132,7 @@ export function DressCodeIcon({
   }
 }
 
+/** Icon badge with hover/focus popup describing the dress code. */
 export function DressCodeMark({
   id,
   className = '',
@@ -144,10 +145,16 @@ export function DressCodeMark({
   return (
     <span
       className={`dress-mark dress-${id} ${className}`.trim()}
-      title={`${meta.label}: ${meta.hint}`}
-      aria-label={`${meta.label} dress code`}
+      tabIndex={0}
+      aria-label={`${meta.label} dress code: ${meta.hint}`}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
     >
       <DressCodeIcon id={id} size={12} />
+      <span className="dress-mark-popup" role="tooltip">
+        <strong>{meta.label}</strong>
+        <em>{meta.hint}</em>
+      </span>
     </span>
   )
 }
@@ -157,9 +164,19 @@ export function DressCodeLegend() {
     <div className="dress-code-strip" aria-label="Dress code legend">
       <strong>Dress code</strong>
       {DRESS_CODES.map((d) => (
-        <span key={d.id} className={`dress-legend-item dress-${d.id}`} title={d.hint}>
-          <DressCodeIcon id={d.id} size={13} />
+        <span
+          key={d.id}
+          className={`dress-legend-item dress-${d.id}`}
+          tabIndex={0}
+        >
+          <span className="dress-legend-icon" aria-hidden>
+            <DressCodeIcon id={d.id} size={12} />
+          </span>
           <span className="dress-legend-label">{d.label}</span>
+          <span className="dress-mark-popup" role="tooltip">
+            <strong>{d.label}</strong>
+            <em>{d.hint}</em>
+          </span>
         </span>
       ))}
     </div>

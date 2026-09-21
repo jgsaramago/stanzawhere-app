@@ -1,4 +1,10 @@
-import type { Holiday, Person, ScheduleEvent, TimezoneLane } from '../types'
+import type {
+  Holiday,
+  Person,
+  ScheduleEvent,
+  TeamEvent,
+  TimezoneLane,
+} from '../types'
 
 export const TIMEZONE_LANES: TimezoneLane[] = [
   { id: 'sf', label: 'PT', city: 'San Francisco', timezone: 'America/Los_Angeles' },
@@ -326,6 +332,7 @@ const OBSOLETE_DEMO_ID_PREFIXES = [
   'demo_dallas_',
   'demo_chicago_',
   'demo_nyc_',
+  'demo_heidelberg_loc_',
 ] as const
 
 export function isObsoleteDemoEventId(id: string): boolean {
@@ -474,26 +481,6 @@ export function buildFixedDemoEvents(now = new Date()): ScheduleEvent[] {
         },
       ],
     })
-
-    events.push({
-      id: `demo_heidelberg_loc_${trip.personId}`,
-      personId: trip.personId,
-      type: 'location',
-      title: hotelNote,
-      startDate: trip.arriveDate,
-      endDate: trip.departDate,
-      location: 'Heidelberg, Germany',
-      countryCode: 'DE',
-      hotel: trip.hotel,
-      notes: hotelNote,
-      dressCode: 'business-casual',
-      status: approved ? 'approved' : 'pending',
-      requestedBy: trip.personId,
-      approverId: person.approverId,
-      reviewedBy: approved ? trip.personId : undefined,
-      createdAt: ts,
-      updatedAt: ts,
-    })
   }
 
 
@@ -528,8 +515,33 @@ export function fixedDemoEventIds(): string[] {
   return buildFixedDemoEvents().map((e) => e.id)
 }
 
+/** Shared Event-row demos (team-wide), upserted on load. */
+export function buildFixedDemoTeamEvents(now = new Date()): TeamEvent[] {
+  const ts = now.toISOString()
+  return [
+    {
+      id: 'demo_team_sap_stanza_workshop',
+      title: 'SAP Stanza workshop',
+      description: 'Onsite workshop with SAP in Walldorf',
+      startDate: '2026-09-28',
+      endDate: '2026-09-30',
+      city: 'Walldorf',
+      countryCode: 'DE',
+      location: 'Walldorf, Germany',
+      dressCode: 'business-casual',
+      createdBy: 'joao',
+      createdAt: ts,
+      updatedAt: ts,
+    },
+  ]
+}
+
 export function buildSeedEvents(now = new Date()): ScheduleEvent[] {
   return [...buildFixedDemoEvents(now)]
+}
+
+export function buildSeedTeamEvents(now = new Date()): TeamEvent[] {
+  return [...buildFixedDemoTeamEvents(now)]
 }
 
 export { COUNTRY_NAMES, COUNTRY_OPTIONS } from './countries'

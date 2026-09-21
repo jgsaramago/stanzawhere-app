@@ -28,6 +28,7 @@ import {
 import { FlightImportModal } from './components/FlightImportModal'
 import { HelpChatbot } from './components/HelpChatbot'
 import { DressCodeLegend, DressCodeMark } from './components/DressCodeMark'
+import { IntroSplash, shouldShowSplash } from './components/IntroSplash'
 import { ProfileModal } from './components/ProfileModal'
 import { UserManualModal } from './components/UserManualModal'
 import type { ChatAction } from './data/manual'
@@ -51,6 +52,7 @@ import { canEditAll, canEditPerson } from './lib/permissions'
 import {
   deleteEvent,
   ensureFixedDemoEvents,
+  ensureFixedDemoTeamEvents,
   HISTORY_LIMIT,
   loadHistory,
   loadState,
@@ -342,6 +344,9 @@ function TeamEventForm({
   const [endDate, setEndDate] = useState(initial?.endDate ?? toDateKey(new Date()))
   const [city, setCity] = useState(initial?.city ?? '')
   const [countryCode, setCountryCode] = useState(initial?.countryCode ?? '')
+  const [dressCode, setDressCode] = useState<DressCode | ''>(
+    initial?.dressCode ?? 'business-casual',
+  )
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -363,6 +368,7 @@ function TeamEventForm({
       city: cityTrim || undefined,
       countryCode: codeTrim || undefined,
       location,
+      dressCode: dressCode || undefined,
       createdBy: initial?.createdBy ?? currentUserId,
       createdAt: initial?.createdAt ?? now,
       updatedAt: now,
@@ -450,6 +456,21 @@ function TeamEventForm({
               ))}
             </select>
           </label>
+
+          <label className="span-2">
+            Dress code
+            <select
+              value={dressCode}
+              onChange={(e) => setDressCode(e.target.value as DressCode | '')}
+            >
+              <option value="">None / not specified</option>
+              {DRESS_CODES.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.label} — {d.hint}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
 
         <footer className="modal-footer between">
@@ -497,6 +518,7 @@ export default function App() {
   const [reviewNote, setReviewNote] = useState('')
   const [toast, setToast] = useState<string | null>(null)
   const [now] = useState(() => new Date())
+  const [showSplash, setShowSplash] = useState(() => shouldShowSplash())
   const stateRef = useRef(state)
   const pastRef = useRef(past)
   const futureRef = useRef(future)
@@ -629,18 +651,31 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
-  // Keep fixed demo bookings (incl. dress codes) in sync with seed.
+  // Keep fixed demo bookings + team events (incl. dress codes) in sync with seed.
   useEffect(() => {
     setState((prev) => {
       const events = ensureFixedDemoEvents(prev.events)
-      const changed =
+      const teamEvents = ensureFixedDemoTeamEvents(prev.teamEvents ?? [])
+      const eventsChanged =
         events.length !== prev.events.length ||
         events.some((e) => {
           const old = prev.events.find((x) => x.id === e.id)
           return !old || old.dressCode !== e.dressCode || old.location !== e.location
         })
-      if (!changed) return prev
-      const next = { ...prev, events }
+      const teamChanged =
+        teamEvents.length !== (prev.teamEvents ?? []).length ||
+        teamEvents.some((e) => {
+          const old = (prev.teamEvents ?? []).find((x) => x.id === e.id)
+          return (
+            !old ||
+            old.dressCode !== e.dressCode ||
+            old.title !== e.title ||
+            old.city !== e.city ||
+            old.location !== e.location
+          )
+        })
+      if (!eventsChanged && !teamChanged) return prev
+      const next = { ...prev, events, teamEvents }
       saveState(next)
       return next
     })
@@ -816,6 +851,7 @@ function addEvents(events: ScheduleEvent[]) {
 
   return (
     <div className="app">
+      {showSplash && <IntroSplash onDone={() => setShowSplash(false)} />}
       {toast && <div className="toast">{toast}</div>}
       {!isGlobalEditor && (
         <div className="perm-banner">
@@ -1061,11 +1097,16 @@ function addEvents(events: ScheduleEvent[]) {
                         <div className="event-stack">
                           {dayTeamEvents.map((event) => {
                             const place = teamEventPlaceLabel(event)
+                            const dress = event.dressCode
+                              ? DRESS_CODES.find((d) => d.id === event.dressCode)
+                              : undefined
                             return (
                               <button
                                 key={event.id}
                                 type="button"
-                                className="event-chip chip-team-event"
+                                className={`event-chip chip-team-event ${
+                                  dress ? 'has-dress-mark' : ''
+                                }`}
                                 title={[
                                   event.title,
                                   place,
@@ -1078,6 +1119,7 @@ function addEvents(events: ScheduleEvent[]) {
                                   setShowTeamEventForm(true)
                                 }}
                               >
+                                {dress && <DressCodeMark id={dress.id} />}
                                 <Calendar size={12} className="team-event-icon" />
                                 <span className="team-event-text">
                                   <strong className="team-event-title">
@@ -1169,9 +1211,19 @@ function addEvents(events: ScheduleEvent[]) {
                                 </div>
                               )}
                               <div className="event-stack">
-                                {dayEvents
-                                  .filter((event) => !(isWeekend(day) && event.type === 'pto'))
-                                  .map((event) => {
+                                {(() => {
+                                  const visible = dayEvents.filter(
+                                    (event) =>
+                                      !(isWeekend(day) && event.type === 'pto'),
+                                  )
+                                  const hasTravel = visible.some(
+                                    (e) => e.type === 'travel',
+                                  )
+                                  // Avoid stacked travel + location/hotel boxes for the same trip
+                                  const chips = hasTravel
+                                    ? visible.filter((e) => e.type !== 'location')
+                                    : visible
+                                  return chips.map((event) => {
                                   const meta = EVENT_META[event.type]
                                   const Icon = meta.icon
                                   const dayKey = toDateKey(day)
@@ -1181,32 +1233,43 @@ function addEvents(events: ScheduleEvent[]) {
                                     new Date(`${event.startDate}T12:00:00`),
                                   )
                                   const dress =
-                                    event.type !== 'pto' && event.dressCode
+                                    event.type === 'travel' && event.dressCode
                                       ? DRESS_CODES.find((d) => d.id === event.dressCode)
+                                      : undefined
+                                  const hotelLabel =
+                                    event.type === 'travel' && event.hotel
+                                      ? event.hotel.startsWith('Hotel')
+                                        ? event.hotel
+                                        : `Hotel: ${event.hotel}`
                                       : undefined
                                   return (
                                     <div
                                       key={event.id}
-                                      className={`event-block ${dress ? 'has-dress-mark' : ''}`}
+                                      className="event-block"
                                     >
-                                      {dress && (
-                                        <DressCodeMark id={dress.id} />
-                                      )}
                                       <button
                                         type="button"
-                                        className={`event-chip ${meta.className} status-${event.status}`}
+                                        className={`event-chip ${meta.className} status-${event.status} ${
+                                          dress ? 'has-dress-mark' : ''
+                                        }`}
                                         onClick={() => setSelectedEvent(event)}
                                         onDoubleClick={(e) => {
                                           e.preventDefault()
                                           e.stopPropagation()
                                           removeEvent(event)
                                         }}
-                                        title={`${event.title} (${event.status})${
+                                        title={[
+                                          event.title,
+                                          hotelLabel,
+                                          `(${event.status})`,
                                           canEditPerson(currentUser.id, event.personId)
-                                            ? ' — double-click to delete'
-                                            : ''
-                                        }`}
+                                            ? 'Double-click to delete'
+                                            : undefined,
+                                        ]
+                                          .filter(Boolean)
+                                          .join(' · ')}
                                       >
+                                        {dress && <DressCodeMark id={dress.id} />}
                                         <Icon size={12} />
                                         <span>
                                           {event.type === 'pto'
@@ -1248,7 +1311,8 @@ function addEvents(events: ScheduleEvent[]) {
                                       ))}
                                     </div>
                                   )
-                                })}
+                                  })
+                                })()}
                                 {dayEvents.length === 0 && !isWeekend(day) && (
                                   <div className="event-chip chip-remote remote-default">
                                     Remote
@@ -1275,7 +1339,7 @@ function addEvents(events: ScheduleEvent[]) {
                     for (const day of week) {
                       if (!isSameMonth(day, anchor)) continue
                       const info = placeForPersonDay(state.events, person, day)
-                      if (!placeLegend.has(info.place)) {
+                      if (info.kind !== 'empty' && info.place && !placeLegend.has(info.place)) {
                         placeLegend.set(
                           info.place,
                           colorForPlace(info.place, info.kind),
@@ -1335,6 +1399,84 @@ function addEvents(events: ScheduleEvent[]) {
                               </div>
                             ))}
 
+                            {/* Event row — aligned with week view */}
+                            <div className="person-row month-event-row">
+                              <div className="person-cell month-person cell sticky-left event-row-label">
+                                <div className="event-row-title">
+                                  <Calendar size={14} />
+                                  <div>
+                                    <strong>Event</strong>
+                                    <span className="event-row-sub">Team-wide</span>
+                                  </div>
+                                </div>
+                              </div>
+                              {week.map((day) => {
+                                if (!isSameMonth(day, anchor)) {
+                                  return (
+                                    <div
+                                      key={`te-${day.toISOString()}`}
+                                      className={`month-swatch cell out-month ${
+                                        isWeekend(day) ? 'is-weekend' : ''
+                                      }`}
+                                    />
+                                  )
+                                }
+                                const dayTeamEvents = teamEventsForDay(
+                                  state.teamEvents ?? [],
+                                  day,
+                                )
+                                const label = dayTeamEvents
+                                  .map((e) => {
+                                    const place = teamEventPlaceLabel(e)
+                                    return place ? `${e.title} · ${place}` : e.title
+                                  })
+                                  .join(' | ')
+                                const canAdd = dayTeamEvents.length === 0 && !isWeekend(day)
+                                return (
+                                  <button
+                                    key={`te-${day.toISOString()}`}
+                                    type="button"
+                                    className={`month-swatch cell month-event-swatch ${
+                                      dayTeamEvents.length ? 'has-team-event' : ''
+                                    } ${canAdd ? 'month-event-add' : ''} ${
+                                      isToday(day) ? 'is-today' : ''
+                                    } ${isWeekend(day) ? 'is-weekend' : ''}`}
+                                    title={
+                                      label ||
+                                      (canAdd ? 'Add team event' : undefined)
+                                    }
+                                    disabled={
+                                      dayTeamEvents.length === 0 && isWeekend(day)
+                                    }
+                                    onClick={() => {
+                                      if (dayTeamEvents[0]) {
+                                        setEditingTeamEvent(dayTeamEvents[0])
+                                      } else if (isWeekend(day)) {
+                                        return
+                                      } else {
+                                        setEditingTeamEvent(null)
+                                      }
+                                      setShowTeamEventForm(true)
+                                      setAnchor(day)
+                                    }}
+                                  >
+                                    {dayTeamEvents[0] ? (
+                                      <span className="month-event-mini">
+                                        <strong>{dayTeamEvents[0].title}</strong>
+                                        {teamEventPlaceLabel(dayTeamEvents[0]) && (
+                                          <em>
+                                            {teamEventPlaceLabel(dayTeamEvents[0])}
+                                          </em>
+                                        )}
+                                      </span>
+                                    ) : canAdd ? (
+                                      <span className="month-event-add-label">+</span>
+                                    ) : null}
+                                  </button>
+                                )
+                              })}
+                            </div>
+
                             {state.people.map((person) => (
                               <div
                                 className="person-row"
@@ -1349,7 +1491,6 @@ function addEvents(events: ScheduleEvent[]) {
                                   <Avatar person={person} />
                                   <div className="person-meta">
                                     <strong>{person.name.split(' ')[0]}</strong>
-                                    <span>{person.title}</span>
                                   </div>
                                 </button>
                                 {week.map((day) => {
@@ -1378,10 +1519,16 @@ function addEvents(events: ScheduleEvent[]) {
                                       type="button"
                                       className={`month-swatch cell ${
                                         info.pending ? 'pending-swatch' : ''
+                                      } ${info.kind === 'empty' ? 'empty-swatch' : ''} ${
+                                        info.kind === 'remote' ? 'remote-swatch' : ''
                                       } ${isToday(day) ? 'is-today' : ''} ${
                                         isWeekend(day) ? 'is-weekend' : ''
                                       } ${localHoliday.length ? 'has-holiday' : ''}`}
-                                      style={{ backgroundColor: color }}
+                                      style={
+                                        info.kind === 'empty'
+                                          ? undefined
+                                          : { backgroundColor: color }
+                                      }
                                       title={`${person.name} · ${format(day, 'MMM d')} · ${info.place}${
                                         info.pending ? ' (pending)' : ''
                                       }${

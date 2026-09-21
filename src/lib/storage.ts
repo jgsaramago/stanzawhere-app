@@ -1,10 +1,12 @@
 import {
   buildFixedDemoEvents,
+  buildFixedDemoTeamEvents,
   buildSeedEvents,
+  buildSeedTeamEvents,
   isObsoleteDemoEventId,
   PEOPLE,
 } from '../data/seed'
-import type { AppState, Person, ScheduleEvent } from '../types'
+import type { AppState, Person, ScheduleEvent, TeamEvent } from '../types'
 
 /** Bump when storage shape changes */
 const STORAGE_KEY = 'stanza-where-v11'
@@ -36,6 +38,35 @@ export function ensureFixedDemoEvents(events: ScheduleEvent[]): ScheduleEvent[] 
     const idx = next.findIndex((e) => e.id === demo.id)
     if (idx === -1) next = [...next, demo]
     else next[idx] = { ...demo, createdAt: next[idx].createdAt }
+  }
+  return next
+}
+
+function normalizeTeamTitle(title: string): string {
+  return title.trim().toLowerCase().replace(/\s+/g, ' ')
+}
+
+/** Upsert shared Event-row demos; drop duplicate SAP workshop chips. */
+export function ensureFixedDemoTeamEvents(teamEvents: TeamEvent[]): TeamEvent[] {
+  const demos = buildFixedDemoTeamEvents()
+  const demoIds = new Set(demos.map((d) => d.id))
+  const demoTitles = new Set(demos.map((d) => normalizeTeamTitle(d.title)))
+
+  // Keep non-demo events, but drop extras that duplicate a fixed demo title
+  let next = (teamEvents ?? []).filter(
+    (e) => demoIds.has(e.id) || !demoTitles.has(normalizeTeamTitle(e.title)),
+  )
+
+  for (const demo of demos) {
+    const idx = next.findIndex((e) => e.id === demo.id)
+    if (idx === -1) next = [...next, demo]
+    else {
+      next[idx] = {
+        ...demo,
+        createdAt: next[idx].createdAt,
+        createdBy: next[idx].createdBy || demo.createdBy,
+      }
+    }
   }
   return next
 }
@@ -179,10 +210,13 @@ function normalizeLoaded(parsed: AppState): AppState | null {
   const events = ensureFixedDemoEvents(
     parsed.events.filter((e) => rosterIds.has(e.personId)),
   )
+  const teamEvents = ensureFixedDemoTeamEvents(
+    Array.isArray(parsed.teamEvents) ? parsed.teamEvents : [],
+  )
   return {
     people,
     events,
-    teamEvents: Array.isArray(parsed.teamEvents) ? parsed.teamEvents : [],
+    teamEvents,
     currentUserId: rosterIds.has(parsed.currentUserId)
       ? parsed.currentUserId
       : 'joao',
@@ -236,7 +270,7 @@ export function loadState(): AppState {
       return {
         people: mergePeople(),
         events: buildSeedEvents(),
-    teamEvents: [],
+        teamEvents: buildSeedTeamEvents(),
         currentUserId: 'joao',
       }
     }
@@ -256,7 +290,9 @@ export function loadState(): AppState {
       ...recovered,
       people: mergePeople(recovered.people),
       events: ensureFixedDemoEvents(recovered.events),
-      teamEvents: Array.isArray(recovered.teamEvents) ? recovered.teamEvents : [],
+      teamEvents: ensureFixedDemoTeamEvents(
+        Array.isArray(recovered.teamEvents) ? recovered.teamEvents : [],
+      ),
     }
     saveState(recoveredState)
     return recoveredState
@@ -265,7 +301,7 @@ export function loadState(): AppState {
   const fresh: AppState = {
     people: mergePeople(),
     events: buildSeedEvents(),
-    teamEvents: [],
+    teamEvents: buildSeedTeamEvents(),
     currentUserId: 'joao',
   }
   saveState(fresh)
@@ -311,7 +347,7 @@ export function resetDemoState(): AppState {
   const state: AppState = {
     people: mergePeople(),
     events: buildSeedEvents(),
-    teamEvents: [],
+    teamEvents: buildSeedTeamEvents(),
     currentUserId: 'joao',
   }
   saveState(state)
